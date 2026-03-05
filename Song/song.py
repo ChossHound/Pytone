@@ -21,7 +21,7 @@ class Song:
         pass
 
     def __init__(self,
-                 tempo: int = 60,
+                 tempo: int = 100,
                  length: int = 16,
                  signature: Tuple[int, int] = (4, 4),
                  loop: bool = True
@@ -34,3 +34,19 @@ class Song:
         self.track_2 = None
         self.track_3 = None
         self.track_4 = None
+
+    def play_song(self) -> None:
+        pass
+
+    def compile_tracks(self) -> None:
+        pass
+
+    def save_as_midi(self) -> None:
+        pass
+
+    def export_to_wav(self) -> str:
+        """exports project to a .wav file
+
+        returns path to file
+        """
+        pass
