@@ -1,0 +1,14 @@
+@startuml context_view
+title Context View
+
+frame "Pytone" {
+Node (Make Music) as m
+node (Save) as s
+node (Export) as e
+}
+
+User --> m
+User -> s
+User -> e
+
+@enduml

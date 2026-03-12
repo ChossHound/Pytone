@@ -1,0 +1,24 @@
+@startuml development_view
+title Development View
+
+package "Pytone" {
+    component Music
+    component UI
+    component Tests
+
+    Tests --> UI
+    Tests --> Music
+}
+
+component MIDO
+Music ..> MIDO
+component PyGame
+MIDO .> PyGame
+component Hypothesis
+component pytest
+
+UI ..> PyGame
+Tests ..> pytest
+Tests ..> Hypothesis
+
+@enduml

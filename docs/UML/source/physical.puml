@@ -1,0 +1,13 @@
+@startuml physical_view
+title Physical View
+
+node "client" {
+    component "Pytone"
+    component "Disk"
+    component "Sound Card"
+}
+
+Pytone --> Disk : Save and load MIDI files
+Pytone --> "Sound Card" : Play songs
+
+@enduml

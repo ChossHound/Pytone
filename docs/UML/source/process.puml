@@ -1,0 +1,22 @@
+@startuml process_view
+title Process View
+
+[*] --> Creation
+Creation: User creates notes in track
+[*] --> Restoration
+Restoration: User loads notes from MIDI file.
+
+Restoration --> Compilation
+Creation --> Compilation
+Compilation: Song is sent to MIDO to convert Note class to MIDI messages.
+
+Compilation --> Send: Play the song
+Send: Send MIDI messages to Pygame
+
+Compilation --> Save: Save the Song
+Save: The user's song is saved as MIDI messages on disk.
+
+Send --> Play
+Play: Pygame sends PCM data to the sound card.
+
+@enduml
