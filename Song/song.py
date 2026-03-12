@@ -36,12 +36,15 @@ class Song:
         self.track_4 = None
 
     def play_song(self) -> None:
+        # run compile_tracks, then send the midi file to a synth/ soundcard?
         pass
 
     def compile_tracks(self) -> None:
+        # compile the notes into midi from
         pass
 
     def save_as_midi(self) -> None:
+        # save your song as midi at a selected folder
         pass
 
     def export_to_wav(self) -> str:
