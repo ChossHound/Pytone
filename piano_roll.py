@@ -13,6 +13,7 @@ GRID_COLOR: tuple[int, int, int] = (74, 101, 108)
 ALT_GRID_COLOR: tuple[int, int, int] = (58, 82, 88)
 GHOST_NOTE_COLOR: tuple[int, int, int] = (125, 199, 227)
 
+
 class PianoRoll:
     def __init__(self, screen, dimension: pygame.Rect):
         self.screen: pygame.Surface = screen
