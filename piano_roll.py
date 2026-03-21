@@ -60,18 +60,25 @@ class PianoRoll:
             if event.button == 1:  # Left click
                 self.end_ghost_note()
 
-
     def draw(self):
-        #draw scale
+        # draw scale
         for i in range(0, self.dimension.height, STEP_HEIGHT*2):
-            pygame.draw.rect(self.screen, GRID_COLOR, (self.dimension.x, self.dimension.y + i, self.dimension.width, STEP_HEIGHT))
+            pygame.draw.rect(self.screen, GRID_COLOR, (self.dimension.x,
+                                                       self.dimension.y + i,
+                                                       self.dimension.width,
+                                                       STEP_HEIGHT))
         for i in range(STEP_HEIGHT, self.dimension.height, STEP_HEIGHT*2):
-            pygame.draw.rect(self.screen, ALT_GRID_COLOR, (self.dimension.x, self.dimension.y + i, self.dimension.width, STEP_HEIGHT))
+            pygame.draw.rect(self.screen, ALT_GRID_COLOR,
+                             (self.dimension.x,
+                              self.dimension.y + i,
+                              self.dimension.width,
+                              STEP_HEIGHT))
 
-        #draw notes
+        # draw notes
         for note in self.notes:
             pygame.draw.rect(self.screen, NOTE_COLOR, self.get_rect(note))
         if self.ghost_note is not None:
-            pygame.draw.rect(self.screen, GHOST_NOTE_COLOR, self.get_rect(self.ghost_note))
+            pygame.draw.rect(self.screen, GHOST_NOTE_COLOR,
+                             self.get_rect(self.ghost_note))
 
-        #draw piano
+        # draw piano
