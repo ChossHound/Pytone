@@ -1,0 +1,27 @@
+@startuml context_view
+title Logical View
+
+class Note {
++ pitch: int
++ start_time: int
++ velocity: int
++ duration: int
+}
+
+class Track {
++ piano_roll: List[Note]
++ instrument: int
+}
+
+Track::piano_roll o- Note
+
+class Song {
++ composition: List[Track] 
++ tempo: int
++ time_signature: tuple[int, int]
++ master_volume: int
+}
+
+Song::composition o- Track
+
+@enduml
