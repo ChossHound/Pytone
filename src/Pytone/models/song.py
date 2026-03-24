@@ -1,35 +1,31 @@
 from typing import Any, List, Tuple, Optional
 from track import Track
-from mido import Message, MidiTrack, MidiFile
+from mido import Message, MidiTrack, MidiFile, bpm2tempo
 from note import Note
 
 
 class Song:
     MAX_TRACKS = 4
-    _instance = Optional["Song"] = None
     """Class to represent an entire song in the Pytone app.
 
-    - Singleton???
-
     Args:
-        - tempo: (int) tempo of song
+        - tempo (int): # of ticks per beat  
         - length (int) # of bars/measures in the song
         - signature: (Tuple(int, int)): Time Signature of song
         - loop: (bool): if tracks should loop back to
                 beginning and keep playing after end is reached
 
     """
-    def __new__(cls) -> None:
-        return super().__new__(cls)
 
     def __init__(self,
-                 tempo: int = 100,
+                 bpm: int = 100,
                  length: int = 16,
                  signature: Tuple[int, int] = (4, 4),
                  loop: bool = True
                  ) -> None:
-        self.tempo = tempo
-        self.length = length
+        self.bpm = bpm
+        self._tempo = bpm2tempo(self.bpm)
+        self._length = length
         self.signature = signature
         self.track_list: list[Track] = []
         self.loop = loop
@@ -76,13 +72,16 @@ class Song:
         # LOGIC:
 
         # Start with an empty file
+        mid = MidiFile(type=1)
 
+        meta_track = MidiTrack()
         # for each track in our app:
 
             # Channel 0 is for meta messages
 
             # create a new MidiTrack object, with only one channel
             # for each note in a track:
+            track = MidiTrack()
                 # Seperate into two messages
                     # note_on
                     # 
