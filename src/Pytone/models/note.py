@@ -8,12 +8,12 @@ class Note:
     pitch (int): 0 - 127
     velocity (int): 0 - 127
 
-    start: time started
-    duration: length of note until release
+    start: note start time relative to song beginning in ticks
+    duration: note end time relative to note start time in ticks
     """
     pitch: int
-    start: float
-    duration: float
+    start: int
+    duration: int
     velocity: int = 100
 
     def __post_init__(self) -> None:
@@ -26,3 +26,15 @@ class Note:
             raise TypeError(f"{name} must be an int")
         if not 0 <= value <= 127:
             raise ValueError(f"{name} must be between 0 and 127")
+        
+    def __eq__(self, other: "Note") -> bool:
+        if self.pitch != other.pitch:
+            return False
+        elif self.velocity != other.velocity:
+            return False
+        elif self.start != other.start:
+            return False
+        elif self.duration != other.duration:
+            return False
+        else:
+            return True

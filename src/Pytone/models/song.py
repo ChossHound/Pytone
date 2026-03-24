@@ -60,6 +60,39 @@ class Song:
         # run compile_tracks, then send the midi file to a synth/ soundcard?
         pass
 
+    def create_midifile(self, path: Optional[str]) -> str:
+        """_summary_
+
+        Args:
+            path (Optional[str]): _description_
+
+        Returns:
+            str: _description_
+        """
+        # NOTES:
+
+        # Note tracks things in abs_time but midi is delta_time
+
+        # LOGIC:
+
+        # Start with an empty file
+
+        # for each track in our app:
+
+            # Channel 0 is for meta messages
+
+            # create a new MidiTrack object, with only one channel
+            # for each note in a track:
+                # Seperate into two messages
+                    # note_on
+                    # 
+                    # note_off
+                
+                # !!! Track the timing of the notes!!!
+
+        # 
+        pass
+
     def export_to_midi(self, path: str) -> str:
         """Export all notes in `track_list` to a type-1 MIDI file."""
         mid = MidiFile(type=1)
@@ -138,3 +171,43 @@ class Song:
                          note=note.pitch,
                          velocity=0,
                          channel=channel))]
+
+    def message_to_note(self, on_message: Message,
+                        off_message: Message, duration: int) -> Note:
+        """
+
+        Args:
+            on_message (Message): note_on midi message for given pitch of note
+            off_message (Message): note_off midi message for given pitch of note
+
+        Returns:
+            Note: _description_
+        """
+        # NOTES:
+        # note_off might not be necessary, just need delta time for duration
+
+        # Testing this Function:
+        # - Messages cannot have differing pitches
+        # - Messages cannot be mismatched (ie "note off" in on_message argument)
+        # - velocity comes from note on message
+
+        # Logic:
+        # 
+        pass
+
+    def build_tracks_from_midifile(self, file: MidiFile) -> None:
+        """Builds the track_list from a given Midifile
+
+        Args:
+            file (MidiFile): _description_
+        """
+        pass
+
+    def select_instrument(self, track: int, instrument: int) -> None:
+        """function to be called for selecting an instument for a track
+
+        Args:
+            track (int): _description_
+            instrument (int): _description_
+        """
+        pass

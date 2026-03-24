@@ -4,6 +4,11 @@ from note import Note
 
 class Track:
     """collection of notes organized by track and pitch
+
+    Args:
+        - channel (int): the midi channel that the track is on
+        - instument (int): which instrumnet that the miditrack is representing
+        - note_list (List[Note]): List of note objects
     """
     def __init__(self, channel: int = 0,
                  instrument: int = 0,
@@ -28,6 +33,7 @@ class Track:
         self._midi_msg_list: List[Any]
 
     # ----------Getters & Setters----------
+
     @property
     def channel(self) -> int:
         """getter for the _channel property
@@ -121,3 +127,13 @@ class Track:
         - Currently a stub. Likely not needed on track class
         """
         pass
+
+    def __eq__(self, other: "Track") -> bool:
+        if self.instrument != other.instrument:
+            return False
+        elif self.channel != other.channel:
+            return False
+        elif self.note_list != other.note_list:
+            return False
+        else:
+            return True
