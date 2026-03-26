@@ -1,9 +1,9 @@
 import pygame
-from note import Note
+from models.note import Note
 from typing import List
 from pygame import Rect
-from constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
-from cursor import Cursor
+from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
+from ui.cursor import Cursor
 
 MIN_BEAT_DURATION: int = 16
 BEAT_WIDTH: int = 2 * PIXEL_SCALE
@@ -35,27 +35,44 @@ class PianoRoll:
             pitch = position[1] // STEP_HEIGHT
             beat = position[0] // BEAT_WIDTH
             self.ghost_note.pitch = pitch
-            self.ghost_note.beat = beat
+            self.ghost_note.start = beat
 
     def end_ghost_note(self):
         if self.ghost_note is not None:
             self.add_note(self.ghost_note)
             self.ghost_note = None
 
-    def get_rect(self, note: Note) -> Rect:
+    @staticmethod
+    def get_rect(note: Note) -> Rect:
         # Convert note properties to a pygame.Rect
-        x = note.beat * BEAT_WIDTH
+        x = note.start * BEAT_WIDTH
         y = note.pitch * STEP_HEIGHT
         width = note.duration * BEAT_WIDTH
         height = STEP_HEIGHT
         return Rect(x, y, width, height)
 
     def process(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
-                self.start_ghost_note(Cursor().get_position())
         if event.type == pygame.MOUSEMOTION:
             self.update_ghost_note(Cursor().get_position())
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left click
+                #check if any notes are hovered
+                for n in self.notes:
+                    note_rect: Rect = self.get_rect(n)
+                    if Cursor().is_overlapping(note_rect):
+                        distance_to_left: int = abs(note_rect.x - Cursor().get_position())
+                        distance_to_right: int = abs(note_rect.x + note_rect.width - Cursor().get_position() + Cursor().size)
+                        
+                        # if more on the left side
+                        if distance_to_left < distance_to_right:
+                            #begin moving note
+                            self.ghost_note = n
+                            self.notes.remove(n)
+                
+                if self.ghost_note is None:
+                    self.start_ghost_note(Cursor().get_position())
+
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # Left click
                 self.end_ghost_note()

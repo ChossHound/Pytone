@@ -14,6 +14,9 @@ export PYTHONPATH
 
 all: check
 
+run:
+	$(PYTHON) src/Pytone/main.py
+
 check: style types test test-coverage clean
 	@echo "All checks passed."
 

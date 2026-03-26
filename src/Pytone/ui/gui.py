@@ -1,10 +1,10 @@
 import pygame
-from piano_roll import PianoRoll
-from note import Note
-from cursor import Cursor
-from constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
+from ui.piano_roll import PianoRoll
+from models.note import Note
+from ui.cursor import Cursor
+from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 
-if __name__ == "__main__":
+def Run() -> None:
     pygame.init()
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -23,3 +23,6 @@ if __name__ == "__main__":
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
+
+if __name__ == "__main__":
+    Run()
