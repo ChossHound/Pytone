@@ -10,9 +10,15 @@ PYTHONPATH := $(SRC_DIR)
 
 export PYTHONPATH
 
-.PHONY: all check style types test clean help
+.PHONY: all check style types test clean help venv install
 
 all: check
+
+venv:
+	python -m venv venv
+
+install:
+	pip install -r requirements.txt
 
 check: style types test test-coverage clean
 	@echo "All checks passed."

@@ -1,5 +1,6 @@
 mido
 pygame
+pyfluidsynth
 hypothesis
 pytest
 flake8
