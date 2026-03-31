@@ -1,6 +1,8 @@
+import os
+from collections import defaultdict
 from typing import Any, List, Tuple, Optional
 from track import Track
-from mido import Message, MidiTrack, MidiFile, bpm2tempo
+from mido import Message, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
 from note import Note
 
 
@@ -16,7 +18,6 @@ class Song:
                 beginning and keep playing after end is reached
 
     """
-
     def __init__(self,
                  bpm: int = 100,
                  length: int = 16,
@@ -52,54 +53,33 @@ class Song:
         """Return True when the song already has the maximum tracks."""
         return len(self.track_list) >= self.get_max_tracks()
 
-    def play_song(self) -> None:
-        # run compile_tracks, then send the midi file to a synth/ soundcard?
-        pass
-
     def create_midifile(self, path: Optional[str]) -> str:
-        """_summary_
+        """Create a type-1 MIDI file from every track in the song.
+
+        Notes are stored with absolute times in the app model, while MIDI
+        messages must be written with delta times. This method converts each
+        track's notes into sorted note-on/note-off messages, then rewrites the
+        absolute note timings as per-track delta times before saving.
 
         Args:
-            path (Optional[str]): _description_
+            path (Optional[str]): Destination path for the MIDI file. When
+                omitted, defaults to ``song.mid`` in the current working
+                directory.
 
         Returns:
-            str: _description_
+            str: Absolute path to the saved MIDI file.
         """
-        # NOTES:
+        if path is None:
+            path = "song.mid"
 
-        # Note tracks things in abs_time but midi is delta_time
-
-        # LOGIC:
-
-        # Start with an empty file
+        output_path = os.path.abspath(path)
         mid = MidiFile(type=1)
 
-        meta_track = MidiTrack()
-        # for each track in our app:
-
-            # Channel 0 is for meta messages
-
-            # create a new MidiTrack object, with only one channel
-            # for each note in a track:
-            track = MidiTrack()
-                # Seperate into two messages
-                    # note_on
-                    # 
-                    # note_off
-                
-                # !!! Track the timing of the notes!!!
-
-        # 
-        pass
-
-    def export_to_midi(self, path: str) -> str:
-        """Export all notes in `track_list` to a type-1 MIDI file."""
-        mid = MidiFile(type=1)
         for track in self.track_list:
             mid_track = MidiTrack()
+            instrument = track.instrument
+            channel = track.channel
 
-            instrument = getattr(track, "_instrument", 0)
-            channel = getattr(track, "channel", 0)
             mid_track.append(
                 Message(
                     "program_change",
@@ -129,8 +109,12 @@ class Song:
 
             mid.tracks.append(mid_track)
 
-        mid.save(path)
-        return path
+        mid.save(output_path)
+        return output_path
+
+    def export_to_midi(self, path: str) -> str:
+        """Export all notes in `track_list` to a type-1 MIDI file."""
+        return self.create_midifile(path)
 
     def export_to_wav(self, midi_path: str) -> str:
         """exports project to a .wav file
@@ -194,13 +178,97 @@ class Song:
         # 
         pass
 
-    def build_tracks_from_midifile(self, file: MidiFile) -> None:
+    def build_tracks_from_midifile(self, midifile: MidiFile) -> None:
         """Builds the track_list from a given Midifile
 
         Args:
-            file (MidiFile): _description_
+            midifile (MidiFile): midifile object to build tracks from.
         """
-        pass
+        if not isinstance(midifile, MidiFile):
+            raise TypeError("midifile must be a MidiFile")
+
+        self.track_list = []
+
+        midi_tempo = bpm2tempo(self.tempo)
+        numerator, denominator = self.signature
+        max_song_tick = 0
+
+        for midi_track in midifile.tracks:
+            absolute_tick = 0
+            instrument = 0
+            channel: Optional[int] = None
+            notes: List[Note] = []
+            active_notes: dict[tuple[int, int], list[tuple[int, int]]] = (
+                defaultdict(list)
+            )
+
+            for message in midi_track:
+                absolute_tick += message.time
+                max_song_tick = max(max_song_tick, absolute_tick)
+
+                if message.is_meta:
+                    if message.type == "set_tempo":
+                        midi_tempo = message.tempo
+                    elif message.type == "time_signature":
+                        numerator = message.numerator
+                        denominator = message.denominator
+                    continue
+
+                if channel is None and hasattr(message, "channel"):
+                    channel = message.channel
+
+                if message.type == "program_change":
+                    instrument = message.program
+                    continue
+
+                is_note_on = (
+                    message.type == "note_on" and message.velocity > 0
+                )
+                is_note_off = (
+                    message.type == "note_off"
+                    or (message.type == "note_on" and message.velocity == 0)
+                )
+
+                if is_note_on:
+                    active_notes[(message.channel, message.note)].append(
+                        (absolute_tick, message.velocity)
+                    )
+                    continue
+
+                if not is_note_off:
+                    continue
+
+                active_key = (message.channel, message.note)
+                if not active_notes[active_key]:
+                    continue
+
+                start_tick, velocity = active_notes[active_key].pop(0)
+                notes.append(
+                    Note(
+                        pitch=message.note,
+                        start=start_tick,
+                        duration=max(0, absolute_tick - start_tick),
+                        velocity=velocity,
+                    )
+                )
+
+            if notes or channel is not None or instrument != 0:
+                notes.sort(key=lambda note: (note.start, note.pitch))
+                self.add_track(
+                    Track(
+                        channel=channel or 0,
+                        instrument=instrument,
+                        note_list=notes,
+                    )
+                )
+
+        self.tempo = int(round(tempo2bpm(midi_tempo)))
+        self.signature = (numerator, denominator)
+
+        beats_per_bar = numerator * (4 / denominator) if denominator else 0
+        if beats_per_bar and midifile.ticks_per_beat:
+            total_beats = max_song_tick / midifile.ticks_per_beat
+            self.length = max(1, int(total_beats / beats_per_bar))
 
     def select_instrument(self, track: int, instrument: int) -> None:
         """function to be called for selecting an instument for a track
