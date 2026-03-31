@@ -1,5 +1,7 @@
-from typing import List, Any
+from typing import List, Any, Optional
 from note import Note
+
+from multimethod import multimethod
 
 
 class Track:
@@ -10,25 +12,28 @@ class Track:
         - instument (int): which instrumnet that the miditrack is representing
         - note_list (List[Note]): List of note objects
     """
-    def __init__(self, channel: int = 0,
-                 instrument: int = 0,
-                 note_list: list[Note] = None) -> None:
+
+    # Implementation notes:
+    # - note_list could be better implemented as a dictionary probably.
+
+    def __init__(self, note_list: Optional[list[Note]] = None,
+                 channel: int = 0,
+                 instrument: int = 0) -> None:
+        self._note_list = [] if note_list is None else note_list
+
         if channel < 0:
             channel = 0
-        elif channel > 15:
+        if channel > 15:
             self._channel = channel % 16
         else:
             self._channel = channel
 
         if instrument < 0:
             instrument = 0
-        elif instrument > 127:
+        if instrument > 127:
             self._instrument = instrument % 128
         else:
             self._instrument = instrument
-
-        if note_list is not None:
-            self._note_list = note_list
 
         self._midi_msg_list: List[Any]
 
@@ -99,6 +104,7 @@ class Track:
         for note in notes:
             self.add_note(note)
 
+    @multimethod
     def remove_note(self, index: int) -> Note:
         """pops a note at given index out of _note_list
 
@@ -109,6 +115,22 @@ class Track:
             Note: _description_
         """
         return self._note_list.pop(index)
+
+    @remove_note.register
+    def _(self, pitch: int, start: int) -> Optional[Note]:
+        """pops a note from the note_list by given pitch and start time
+
+        Args:
+            pitch (int): 0-127
+            start (int): absolute time in ticks
+
+        Returns:
+            Note: the note to return
+        """
+        for index, note in enumerate(self.note_list):
+            if note.start == start and note.pitch == pitch:
+                return self.note_list.pop(index)
+        return None
 
     def clear_notes(self) -> None:
         """clears self._note_list
@@ -121,14 +143,17 @@ class Track:
     def __iter__(self):
         return iter(self._note_list)
 
-    def sort_note_list(self) -> None:
-        """sorts _note_list into chronological order
+    # def sort_note_list(self) -> None:
+    #     """sorts _note_list into chronological order
 
-        - Currently a stub. Likely not needed on track class
-        """
-        pass
+    #     - Currently a stub. Likely not needed on track class
+    #     """
+    #     pass
 
-    def __eq__(self, other: "Track") -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Track):
+            return NotImplemented
+
         if self.instrument != other.instrument:
             return False
         elif self.channel != other.channel:

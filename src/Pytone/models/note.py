@@ -26,8 +26,11 @@ class Note:
             raise TypeError(f"{name} must be an int")
         if not 0 <= value <= 127:
             raise ValueError(f"{name} must be between 0 and 127")
-        
-    def __eq__(self, other: "Note") -> bool:
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Note):
+            return NotImplemented
+
         if self.pitch != other.pitch:
             return False
         elif self.velocity != other.velocity:

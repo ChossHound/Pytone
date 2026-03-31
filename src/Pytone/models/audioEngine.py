@@ -1,6 +1,7 @@
 from typing import Optional
 from mido import MidiFile, MidiTrack
 from note import Note
+import fluidsynth
 
 
 class Engine:

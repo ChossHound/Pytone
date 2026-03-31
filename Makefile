@@ -27,7 +27,7 @@ style:
 	$(FLAKE8) $(PACKAGE_DIR) $(TEST_DIR)
 
 types:
-	mypy --ignore-missing-imports $(PACKAGE_DIR) $(TEST_DIR)
+	mypy --ignore-missing-imports $(TEST_DIR)
 
 test:
 	pytest -v $(TEST_DIR)

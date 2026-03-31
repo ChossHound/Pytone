@@ -6,3 +6,4 @@ pytest
 flake8
 autopep8
 mypy
+multimethod
