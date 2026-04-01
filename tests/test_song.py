@@ -169,18 +169,18 @@ def test_create_midifile_exports_all_tracks_and_uses_delta_times(tmp_path):
 
 
 def test_song_instances_are_independent():
-    first_song = Song(tempo=120, length=8, signature=(3, 4), loop=False)
+    first_song = Song(bpm=120, length=8, signature=(3, 4), loop=False)
     second_song = Song()
 
     first_song.add_track(Track(channel=1, instrument=5, note_list=[]))
 
     assert first_song is not second_song
-    assert first_song.tempo == 120
+    assert first_song.bpm == 120
     assert first_song.length == 8
     assert first_song.signature == (3, 4)
     assert first_song.loop is False
     assert len(first_song.track_list) == 1
-    assert second_song.tempo == 100
+    assert second_song.bpm == 100
     assert second_song.length == 16
     assert second_song.signature == (4, 4)
     assert second_song.loop is True
@@ -282,12 +282,12 @@ def test_build_tracks_from_midifile_populates_song_from_midi_data():
     )
     midi_file.tracks.append(instrument_track)
 
-    song = Song(tempo=100, length=16, signature=(4, 4))
+    song = Song(bpm=100, length=16, signature=(4, 4))
     song.add_track(Track(channel=1, instrument=1, note_list=[]))
 
     song.build_tracks_from_midifile(midi_file)
 
-    assert song.tempo == 140
+    assert song.bpm == 140
     assert song.signature == (3, 4)
     assert song.length == 1
     assert len(song.track_list) == 1
@@ -358,19 +358,19 @@ def test_build_tracks_from_midifile_rejects_non_midifile_inputs():
         imported_track_strategy(),
         max_size=Song.MAX_TRACKS,
     ),
-    tempo=st.integers(min_value=40, max_value=220),
+    bpm=st.integers(min_value=40, max_value=220),
     numerator=st.integers(min_value=1, max_value=7),
     denominator=st.sampled_from([1, 2, 4, 8, 16]),
 )
 def test_build_tracks_from_midifile_round_trips_generated_midi_data(
     tracks,
-    tempo,
+    bpm,
     numerator,
     denominator,
 ):
     midi_file = MidiFile(type=1)
     metadata_track = MidiTrack()
-    metadata_track.append(MetaMessage("set_tempo", tempo=bpm2tempo(tempo), time=0))
+    metadata_track.append(MetaMessage("set_tempo", tempo=bpm2tempo(bpm), time=0))
     metadata_track.append(
         MetaMessage(
             "time_signature",
@@ -384,10 +384,10 @@ def test_build_tracks_from_midifile_round_trips_generated_midi_data(
     for track in tracks:
         midi_file.tracks.append(midi_track_from_track(track))
 
-    song = Song(tempo=100, length=16, signature=(4, 4))
+    song = Song(bpm=100, length=16, signature=(4, 4))
     song.build_tracks_from_midifile(midi_file)
 
-    assert song.tempo == tempo
+    assert song.bpm == bpm
     assert song.signature == (numerator, denominator)
     assert song.track_list == tracks
     if tracks:

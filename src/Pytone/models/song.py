@@ -11,7 +11,7 @@ class Song:
     """Class to represent an entire song in the Pytone app.
 
     Args:
-        - tempo: (int) tempo of song
+        - bpm: (int) tempo of song
         - length (int) # of bars/measures in the song
         - signature: (Tuple(int, int)): Time Signature of song
         - loop: (bool): if tracks should loop back to
@@ -19,12 +19,12 @@ class Song:
 
     """
     def __init__(self,
-                 tempo: int = 100,
+                 bpm: int = 100,
                  length: int = 16,
                  signature: Tuple[int, int] = (4, 4),
                  loop: bool = True
                  ) -> None:
-        self.tempo = tempo
+        self.bpm = bpm
         self.length = length
         self.signature = signature
         self.track_list: list[Track] = []
@@ -188,7 +188,7 @@ class Song:
 
         self.track_list = []
 
-        midi_tempo = bpm2tempo(self.tempo)
+        midi_tempo = bpm2tempo(self.bpm)
         numerator, denominator = self.signature
         max_song_tick = 0
 
@@ -261,7 +261,7 @@ class Song:
                     )
                 )
 
-        self.tempo = int(round(tempo2bpm(midi_tempo)))
+        self.bpm = int(round(tempo2bpm(midi_tempo)))
         self.signature = (numerator, denominator)
 
         beats_per_bar = numerator * (4 / denominator) if denominator else 0
