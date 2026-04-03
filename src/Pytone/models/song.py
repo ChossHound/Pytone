@@ -1,3 +1,4 @@
+""" Module providing Song class to represent Midisong """
 import os
 from collections import defaultdict
 from typing import Any, List, Tuple, Optional
@@ -52,7 +53,7 @@ class Song:
         """Return True when the song already has the maximum tracks."""
         return len(self.track_list) >= self.get_max_tracks()
 
-    def create_midifile(self, path: Optional[str]) -> str:
+    def create_midifile(self, path: Optional[str]) -> str | MidiFile:
         """Create a type-1 MIDI file from every track in the song.
 
         Notes are stored with absolute times in the app model, while MIDI
@@ -66,12 +67,12 @@ class Song:
                 directory.
 
         Returns:
-            str: Absolute path to the saved MIDI file.
+            str | Midifile: Absolute path to the saved MidiFile if path is
+            given, otherwise returns the Midifile itself.
         """
-        if path is None:
-            path = "song.mid"
+        
 
-        output_path = os.path.abspath(path)
+        
         mid = MidiFile(type=1)
 
         for track in self.track_list:
@@ -107,28 +108,31 @@ class Song:
                 previous_tick = absolute_tick
 
             mid.tracks.append(mid_track)
-
-        mid.save(output_path)
+        if path is None:
+            return mid
+        else:
+            output_path = os.path.abspath(path)
+            mid.save(output_path)
         return output_path
 
-    def export_to_midi(self, path: str) -> str:
-        """Export all notes in `track_list` to a type-1 MIDI file."""
-        return self.create_midifile(path)
+    # def export_to_midi(self, path: str) -> str:
+    #     """Export all notes in `track_list` to a type-1 MIDI file."""
+    #     return self.create_midifile(path)
 
-    def export_to_wav(self, midi_path: str) -> str:
-        """exports project to a .wav file
+    # def export_to_wav(self, midi_path: str) -> str:
+    #     """exports project to a .wav file
 
-        returns path to file
-        """
-        pass
+    #     returns path to file
+    #     """
+    #     pass
 
     def load_from_midi(self, path: str) -> None:
         pass
 
-    def notes_to_midi(self) -> None:
-        """Converts the list of notes into list of midi messages
-        """
-        pass
+    # def notes_to_midi(self) -> None:
+    #     """Converts the list of notes into list of midi messages
+    #     """
+    #     pass
 
     def note_to_message(self,
                         note: Note,
@@ -160,7 +164,8 @@ class Song:
 
         Args:
             on_message (Message): note_on midi message for given pitch of note
-            off_message (Message): note_off midi message for given pitch of note
+            off_message (Message): note_off midi message for given pitch of 
+                note
 
         Returns:
             Note: _description_
@@ -170,7 +175,7 @@ class Song:
 
         # Testing this Function:
         # - Messages cannot have differing pitches
-        # - Messages cannot be mismatched (ie "note off" in on_message argument)
+        # - Messages cannot be mismatched ( "note_off" in on_message argument)
         # - velocity comes from note on message
 
         # Logic:
