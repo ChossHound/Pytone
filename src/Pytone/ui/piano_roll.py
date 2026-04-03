@@ -1,10 +1,14 @@
 import pygame
+import pygame.freetype 
+import os
 from models.note import Note
 from typing import List
 from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 from ui.cursor import Cursor
 
-MIN_BEAT_DURATION: int = 16
+BPM: int = 120
+MAX_SONG_DURATION: int = 60 * 10 * 4 * BPM  # 10 minutes = seconds * min/second * beats per measure * beats per minute
+MIN_BEAT_DURATION: int = 4
 BEAT_WIDTH: int = 2 * PIXEL_SCALE
 STEP_HEIGHT: int = 8 * PIXEL_SCALE
 NOTE_COLOR: tuple[int, int, int] = (81, 152, 179)
@@ -26,6 +30,10 @@ class PianoRoll:
         self.ghost_note: Note | None = None
         self.cropping_note: bool = False
         self.dimension = dimension
+        self.piano_size = dimension.x
+        self.dimension.width = MAX_SONG_DURATION*BEAT_WIDTH
+        self.dimension.height = NUM_OCTAVES*STEP_HEIGHT*KEYS_PER_OCTAVE
+        self.FONT = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
 
     def add_note(self, note: Note):
         self.notes.append(note)
@@ -116,21 +124,29 @@ class PianoRoll:
                 self.end_ghost_note()
 
         if event.type == pygame.MOUSEWHEEL:
-            self.dimension.y += event.y
+            self.dimension.y += event.y * PIXEL_SCALE * 4
+            self.dimension.y = min(0, max(self.dimension.y, SCREEN_HEIGHT - KEYS_PER_OCTAVE*NUM_OCTAVES*STEP_HEIGHT))
+            
+            self.dimension.x -= event.x * PIXEL_SCALE * 4
+            self.dimension.x = min(self.piano_size, max(self.dimension.x, SCREEN_WIDTH - self.dimension.width))
 
     def draw(self):
-        # draw scale
-        for i in range(0, STEP_HEIGHT * KEYS_PER_OCTAVE * NUM_OCTAVES, STEP_HEIGHT*2):
-            pygame.draw.rect(self.screen, GRID_COLOR, (self.dimension.x,
-                                                       self.dimension.y + i,
-                                                       self.dimension.width,
-                                                       STEP_HEIGHT))
-        for i in range(STEP_HEIGHT, STEP_HEIGHT * KEYS_PER_OCTAVE * NUM_OCTAVES, STEP_HEIGHT*2):
-            pygame.draw.rect(self.screen, ALT_GRID_COLOR,
+        for i in range(0, KEYS_PER_OCTAVE * NUM_OCTAVES, 1):
+            # draw grid
+            color: tuple[int, int, int] = GRID_COLOR if i % 2 == 0 else ALT_GRID_COLOR
+            pygame.draw.rect(self.screen, color,
                              (self.dimension.x,
-                              self.dimension.y + i,
+                              self.dimension.y + i*STEP_HEIGHT,
                               self.dimension.width,
                               STEP_HEIGHT))
+
+            # draw piano keys
+            color_index: int = i % KEYS_PER_OCTAVE
+            pygame.draw.rect(self.screen, KEY_COLORS[color_index], (0, i*STEP_HEIGHT + self.dimension.y, self.dimension.x, STEP_HEIGHT))
+        
+        # draw octave numbers
+        for i in range(1, NUM_OCTAVES + 1, 1):
+            self.FONT.render_to(self.screen, (self.dimension.x - 5*PIXEL_SCALE, i*STEP_HEIGHT*KEYS_PER_OCTAVE + self.dimension.y - 7*PIXEL_SCALE), str(NUM_OCTAVES + 1 - i), ACCIDENTAL_KEY_COLOR)
 
         # draw notes
         for note in self.notes:
@@ -138,8 +154,3 @@ class PianoRoll:
         if self.ghost_note is not None:
             pygame.draw.rect(self.screen, GHOST_NOTE_COLOR,
                              self.get_rect(self.ghost_note))
-
-        # draw piano
-        for i in range(0, self.dimension.height//STEP_HEIGHT, 1):
-            color_index: int = i % KEYS_PER_OCTAVE
-            pygame.draw.rect(self.screen, KEY_COLORS[color_index], (0, i*STEP_HEIGHT + self.dimension.y, self.dimension.x, STEP_HEIGHT))
