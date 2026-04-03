@@ -1,6 +1,15 @@
+"""_summary_
+
+    Raises:
+        FileNotFoundError: _description_
+        TypeError: _description_
+
+    Returns:
+        _type_: _description_
+    """
 from pathlib import Path
 from typing import Optional
-from importlib.resources import files
+# from importlib.resources import files
 from mido import MidiFile
 import fluidsynth
 import time
@@ -39,22 +48,33 @@ class Engine:
             
     def __init__(self,
                  sound_font: str = None) -> None:
+        if getattr(self, "_initialized", False):
+            return
+
         self.synth = fluidsynth.Synth(channels=16)
+        if sound_font is not None:
+            self.sound_font = sound_font
+        else:
+            self.sound_font = str(
+                Path(__file__).resolve().parents[1]
+                / "assets"
+                / "soundfonts"
+                / "FluidR3_GM.sf2"
+                )
 
-        self.sound_font = (
-            Path(__file__).resolve().parents[1]
-            / "assets"
-            / "soundfonts"
-            / "FluidR3_GM.sf2"
-            )
-
-        self.synth.start(driver="pulseaudio")
-        sfid = self.synth.sfload(str(self.sound_font))
-        self.synth.program_select(0, sfid, 0, 0)
-
-        self._test_audio()
+        self._started = False
+        self._initialized = True
 
         # self._test_audio()
+
+    def start(self) -> None:
+        if self._started:
+            return
+
+        self.synth.start(driver="pulseaudio")
+        sfid = self.synth.sfload(self.sound_font)
+        self.synth.program_select(0, sfid, 0, 0)
+        self._started = True
 
     def play_midi(self, song: MidiFile, loop: bool = False) -> None:
         """_summary_
@@ -177,6 +197,3 @@ class Engine:
             program (_type_): _description_
         """
         self.synth.program_change(chan=channel, prg=program)
-
-
-test = Engine()
