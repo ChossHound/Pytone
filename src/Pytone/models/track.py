@@ -1,7 +1,13 @@
-from typing import List, Any, Optional
-from note import Note
+"""_summary_
 
-from multimethod import multimethod
+    Raises:
+        TypeError: _description_
+
+    Returns:
+        _type_: _description_
+    """
+from typing import List, Any, Optional
+from .note import Note
 
 
 class Track:
@@ -104,31 +110,24 @@ class Track:
         for note in notes:
             self.add_note(note)
 
-    @multimethod
-    def remove_note(self, index: int) -> Note:
-        """pops a note at given index out of _note_list
+    def remove_note(self, index_or_pitch: int, start: Optional[int] = None
+                    ) -> Optional[Note]:
+        """Remove a note by index or by pitch/start location.
 
         Args:
-            index (int): _description_
+            index_or_pitch (int): Note index when ``start`` is omitted, or the
+                MIDI pitch when ``start`` is provided.
+            start (Optional[int]): Absolute start time in 16th-note steps.
 
         Returns:
-            Note: _description_
+            Optional[Note]: The removed note, or ``None`` when no note matches
+            the given pitch/start pair.
         """
-        return self._note_list.pop(index)
+        if start is None:
+            return self._note_list.pop(index_or_pitch)
 
-    @remove_note.register
-    def _(self, pitch: int, start: int) -> Optional[Note]:
-        """pops a note from the note_list by given pitch and start time
-
-        Args:
-            pitch (int): 0-127
-            start (int): absolute time in ticks
-
-        Returns:
-            Note: the note to return
-        """
         for index, note in enumerate(self.note_list):
-            if note.start == start and note.pitch == pitch:
+            if note.start == start and note.pitch == index_or_pitch:
                 return self.note_list.pop(index)
         return None
 

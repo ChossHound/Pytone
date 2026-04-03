@@ -34,7 +34,7 @@ def test_track_wraps_instrument_above_midi_limit():
 
 
 def test_track_keeps_provided_note_list():
-    notes = [Note(pitch=60, start=0.0, duration=1.0)]
+    notes = [Note(pitch=60, start=0, duration=4)]
     track = Track(channel=3, instrument=11, note_list=notes)
 
     assert track._note_list is notes

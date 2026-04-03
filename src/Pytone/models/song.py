@@ -1,17 +1,19 @@
+""" Module providing Song class to represent Midisong """
 import os
 from collections import defaultdict
 from typing import Any, List, Tuple, Optional
-from track import Track
+from .track import Track
 from mido import Message, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
-from note import Note
+from .note import Note
 
 
 class Song:
     MAX_TRACKS = 4
+    STEPS_PER_BEAT = Note.STEPS_PER_BEAT
     """Class to represent an entire song in the Pytone app.
 
     Args:
-        - tempo (int): # of ticks per beat  
+        - bpm: (int) tempo of song
         - length (int) # of bars/measures in the song
         - signature: (Tuple(int, int)): Time Signature of song
         - loop: (bool): if tracks should loop back to
@@ -25,8 +27,7 @@ class Song:
                  loop: bool = True
                  ) -> None:
         self.bpm = bpm
-        self._tempo = bpm2tempo(self.bpm)
-        self._length = length
+        self.length = length
         self.signature = signature
         self.track_list: list[Track] = []
         self.loop = loop
@@ -53,10 +54,10 @@ class Song:
         """Return True when the song already has the maximum tracks."""
         return len(self.track_list) >= self.get_max_tracks()
 
-    def create_midifile(self, path: Optional[str]) -> str:
+    def create_midifile(self, path: Optional[str]) -> str | MidiFile:
         """Create a type-1 MIDI file from every track in the song.
 
-        Notes are stored with absolute times in the app model, while MIDI
+        Notes are stored as 16th-note steps in the app model, while MIDI
         messages must be written with delta times. This method converts each
         track's notes into sorted note-on/note-off messages, then rewrites the
         absolute note timings as per-track delta times before saving.
@@ -67,12 +68,10 @@ class Song:
                 directory.
 
         Returns:
-            str: Absolute path to the saved MIDI file.
+            str | Midifile: Absolute path to the saved MidiFile if path is
+            given, otherwise returns the Midifile itself.
         """
-        if path is None:
-            path = "song.mid"
 
-        output_path = os.path.abspath(path)
         mid = MidiFile(type=1)
 
         for track in self.track_list:
@@ -89,7 +88,7 @@ class Song:
                 )
             )
 
-            timed_messages: List[Tuple[float, Message]] = []
+            timed_messages: List[Tuple[int, Message]] = []
             for note in getattr(track, "_note_list", []):
                 timed_messages.extend(self.note_to_message(note, channel))
 
@@ -102,38 +101,56 @@ class Song:
 
             previous_tick = 0
             for absolute_time, message in timed_messages:
-                absolute_tick = int(round(absolute_time * mid.ticks_per_beat))
+                absolute_tick = self.steps_to_ticks(
+                    absolute_time,
+                    mid.ticks_per_beat,
+                )
                 message.time = max(0, absolute_tick - previous_tick)
                 mid_track.append(message)
                 previous_tick = absolute_tick
 
             mid.tracks.append(mid_track)
-
-        mid.save(output_path)
+        if path is None:
+            return mid
+        else:
+            output_path = os.path.abspath(path)
+            mid.save(output_path)
         return output_path
 
-    def export_to_midi(self, path: str) -> str:
-        """Export all notes in `track_list` to a type-1 MIDI file."""
-        return self.create_midifile(path)
+    # def export_to_midi(self, path: str) -> str:
+    #     """Export all notes in `track_list` to a type-1 MIDI file."""
+    #     return self.create_midifile(path)
 
-    def export_to_wav(self, midi_path: str) -> str:
-        """exports project to a .wav file
+    # def export_to_wav(self, midi_path: str) -> str:
+    #     """exports project to a .wav file
 
-        returns path to file
-        """
-        pass
+    #     returns path to file
+    #     """
+    #     pass
 
     def load_from_midi(self, path: str) -> None:
         pass
 
-    def notes_to_midi(self) -> None:
-        """Converts the list of notes into list of midi messages
-        """
-        pass
+    # def notes_to_midi(self) -> None:
+    #     """Converts the list of notes into list of midi messages
+    #     """
+    #     pass
+
+    @classmethod
+    def steps_to_ticks(cls, steps: int, ticks_per_beat: int) -> int:
+        """Convert 16th-note steps into MIDI ticks."""
+        return int(round((steps * ticks_per_beat) / cls.STEPS_PER_BEAT))
+
+    @classmethod
+    def ticks_to_steps(cls, ticks: int, ticks_per_beat: int) -> int:
+        """Convert MIDI ticks into 16th-note steps."""
+        if ticks_per_beat <= 0:
+            raise ValueError("ticks_per_beat must be positive")
+        return int(round((ticks * cls.STEPS_PER_BEAT) / ticks_per_beat))
 
     def note_to_message(self,
                         note: Note,
-                        channel: int = 0) -> List[Tuple[float, Message]]:
+                        channel: int = 0) -> List[Tuple[int, Message]]:
         """Converts a Note object into corresponding midi messages
 
         Args:
@@ -161,7 +178,8 @@ class Song:
 
         Args:
             on_message (Message): note_on midi message for given pitch of note
-            off_message (Message): note_off midi message for given pitch of note
+            off_message (Message): note_off midi message for given pitch of 
+                note
 
         Returns:
             Note: _description_
@@ -171,7 +189,7 @@ class Song:
 
         # Testing this Function:
         # - Messages cannot have differing pitches
-        # - Messages cannot be mismatched (ie "note off" in on_message argument)
+        # - Messages cannot be mismatched ( "note_off" in on_message argument)
         # - velocity comes from note on message
 
         # Logic:
@@ -189,9 +207,9 @@ class Song:
 
         self.track_list = []
 
-        midi_tempo = bpm2tempo(self.tempo)
+        midi_tempo = bpm2tempo(self.bpm)
         numerator, denominator = self.signature
-        max_song_tick = 0
+        max_song_step = 0
 
         for midi_track in midifile.tracks:
             absolute_tick = 0
@@ -204,7 +222,6 @@ class Song:
 
             for message in midi_track:
                 absolute_tick += message.time
-                max_song_tick = max(max_song_tick, absolute_tick)
 
                 if message.is_meta:
                     if message.type == "set_tempo":
@@ -243,14 +260,26 @@ class Song:
                     continue
 
                 start_tick, velocity = active_notes[active_key].pop(0)
+                start_step = self.ticks_to_steps(
+                    start_tick,
+                    midifile.ticks_per_beat,
+                )
+                duration_step = max(
+                    Note.MIN_DURATION,
+                    self.ticks_to_steps(
+                        absolute_tick - start_tick,
+                        midifile.ticks_per_beat,
+                    ),
+                )
                 notes.append(
                     Note(
                         pitch=message.note,
-                        start=start_tick,
-                        duration=max(0, absolute_tick - start_tick),
+                        start=start_step,
+                        duration=duration_step,
                         velocity=velocity,
                     )
                 )
+                max_song_step = max(max_song_step, start_step + duration_step)
 
             if notes or channel is not None or instrument != 0:
                 notes.sort(key=lambda note: (note.start, note.pitch))
@@ -262,13 +291,15 @@ class Song:
                     )
                 )
 
-        self.tempo = int(round(tempo2bpm(midi_tempo)))
+        self.bpm = int(round(tempo2bpm(midi_tempo)))
         self.signature = (numerator, denominator)
 
-        beats_per_bar = numerator * (4 / denominator) if denominator else 0
-        if beats_per_bar and midifile.ticks_per_beat:
-            total_beats = max_song_tick / midifile.ticks_per_beat
-            self.length = max(1, int(total_beats / beats_per_bar))
+        steps_per_bar = (
+            numerator * ((self.STEPS_PER_BEAT * 4) / denominator)
+            if denominator else 0
+        )
+        if steps_per_bar:
+            self.length = max(1, int(max_song_step / steps_per_bar))
 
     def select_instrument(self, track: int, instrument: int) -> None:
         """function to be called for selecting an instument for a track

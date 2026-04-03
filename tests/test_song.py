@@ -18,6 +18,11 @@ Song = song_module.Song
 
 
 def midi_track_from_track(track):
+    ticks_per_beat = MidiFile().ticks_per_beat
+
+    def steps_to_ticks(steps):
+        return int(round((steps * ticks_per_beat) / Song.STEPS_PER_BEAT))
+
     midi_track = MidiTrack()
     midi_track.append(
         Message(
@@ -32,7 +37,7 @@ def midi_track_from_track(track):
     for note in track.note_list:
         timed_messages.append(
             (
-                note.start,
+                steps_to_ticks(note.start),
                 Message(
                     "note_on",
                     channel=track.channel,
@@ -44,7 +49,7 @@ def midi_track_from_track(track):
         )
         timed_messages.append(
             (
-                note.start + note.duration,
+                steps_to_ticks(note.start + note.duration),
                 Message(
                     "note_off",
                     channel=track.channel,
@@ -121,15 +126,15 @@ def test_create_midifile_exports_all_tracks_and_uses_delta_times(tmp_path):
         channel=2,
         instrument=10,
         note_list=[
-            Note(pitch=60, start=0.0, duration=1.0, velocity=70),
-            Note(pitch=64, start=1.5, duration=0.5, velocity=80),
+            Note(pitch=60, start=0, duration=4, velocity=70),
+            Note(pitch=64, start=6, duration=2, velocity=80),
         ],
     )
     second_track = Track(
         channel=5,
         instrument=20,
         note_list=[
-            Note(pitch=67, start=0.5, duration=0.25, velocity=90),
+            Note(pitch=67, start=2, duration=1, velocity=90),
         ],
     )
     song.add_track(first_track)
@@ -169,18 +174,18 @@ def test_create_midifile_exports_all_tracks_and_uses_delta_times(tmp_path):
 
 
 def test_song_instances_are_independent():
-    first_song = Song(tempo=120, length=8, signature=(3, 4), loop=False)
+    first_song = Song(bpm=120, length=8, signature=(3, 4), loop=False)
     second_song = Song()
 
     first_song.add_track(Track(channel=1, instrument=5, note_list=[]))
 
     assert first_song is not second_song
-    assert first_song.tempo == 120
+    assert first_song.bpm == 120
     assert first_song.length == 8
     assert first_song.signature == (3, 4)
     assert first_song.loop is False
     assert len(first_song.track_list) == 1
-    assert second_song.tempo == 100
+    assert second_song.bpm == 100
     assert second_song.length == 16
     assert second_song.signature == (4, 4)
     assert second_song.loop is True
@@ -264,30 +269,47 @@ def test_create_midifile_emits_expected_track_and_message_counts(tracks):
 def test_build_tracks_from_midifile_populates_song_from_midi_data():
     midi_file = MidiFile(type=1)
     metadata_track = MidiTrack()
-    metadata_track.append(MetaMessage("set_tempo", tempo=bpm2tempo(140), time=0))
+    metadata_track.append(MetaMessage("set_tempo",
+                                      tempo=bpm2tempo(140),
+                                      time=0))
     metadata_track.append(
         MetaMessage("time_signature", numerator=3, denominator=4, time=0)
     )
     midi_file.tracks.append(metadata_track)
 
     instrument_track = MidiTrack()
-    instrument_track.append(Message("program_change", channel=7, program=42, time=0))
-    instrument_track.append(Message("note_on", channel=7, note=60, velocity=96, time=0))
+    instrument_track.append(Message("program_change",
+                                    channel=7,
+                                    program=42,
+                                    time=0))
+    instrument_track.append(Message("note_on",
+                                    channel=7,
+                                    note=60,
+                                    velocity=96,
+                                    time=0))
     instrument_track.append(
         Message("note_off", channel=7, note=60, velocity=0, time=240)
     )
-    instrument_track.append(Message("note_on", channel=7, note=64, velocity=88, time=120))
+    instrument_track.append(Message("note_on",
+                                    channel=7,
+                                    note=64,
+                                    velocity=88,
+                                    time=120))
     instrument_track.append(
-        Message("note_off", channel=7, note=64, velocity=0, time=120)
+        Message("note_off",
+                channel=7,
+                note=64,
+                velocity=0,
+                time=120)
     )
     midi_file.tracks.append(instrument_track)
 
-    song = Song(tempo=100, length=16, signature=(4, 4))
+    song = Song(bpm=100, length=16, signature=(4, 4))
     song.add_track(Track(channel=1, instrument=1, note_list=[]))
 
     song.build_tracks_from_midifile(midi_file)
 
-    assert song.tempo == 140
+    assert song.bpm == 140
     assert song.signature == (3, 4)
     assert song.length == 1
     assert len(song.track_list) == 1
@@ -296,8 +318,8 @@ def test_build_tracks_from_midifile_populates_song_from_midi_data():
     assert track.channel == 7
     assert track.instrument == 42
     assert track.note_list == [
-        Note(pitch=60, start=0, duration=240, velocity=96),
-        Note(pitch=64, start=360, duration=120, velocity=88),
+        Note(pitch=60, start=0, duration=2, velocity=96),
+        Note(pitch=64, start=3, duration=1, velocity=88),
     ]
 
 
@@ -305,12 +327,22 @@ def test_build_tracks_from_midifile_replaces_existing_tracks():
     midi_file = MidiFile(type=1)
     midi_track = MidiTrack()
     midi_track.append(Message("program_change", channel=3, program=11, time=0))
-    midi_track.append(Message("note_on", channel=3, note=72, velocity=64, time=10))
-    midi_track.append(Message("note_off", channel=3, note=72, velocity=0, time=20))
+    midi_track.append(Message("note_on",
+                              channel=3,
+                              note=72,
+                              velocity=64,
+                              time=120))
+    midi_track.append(Message("note_off",
+                              channel=3,
+                              note=72,
+                              velocity=0,
+                              time=240))
     midi_file.tracks.append(midi_track)
 
     song = Song()
-    song.add_track(Track(channel=1, instrument=1, note_list=[Note(60, 0, 1, 80)]))
+    song.add_track(Track(channel=1,
+                         instrument=1,
+                         note_list=[Note(60, 0, 1, 80)]))
 
     song.build_tracks_from_midifile(midi_file)
 
@@ -318,7 +350,7 @@ def test_build_tracks_from_midifile_replaces_existing_tracks():
     assert song.track_list[0] == Track(
         channel=3,
         instrument=11,
-        note_list=[Note(pitch=72, start=10, duration=20, velocity=64)],
+        note_list=[Note(pitch=72, start=1, duration=2, velocity=64)],
     )
 
 
@@ -326,8 +358,16 @@ def test_build_tracks_from_midifile_treats_zero_velocity_note_on_as_note_off():
     midi_file = MidiFile(type=1)
     midi_track = MidiTrack()
     midi_track.append(Message("program_change", channel=4, program=8, time=0))
-    midi_track.append(Message("note_on", channel=4, note=65, velocity=70, time=5))
-    midi_track.append(Message("note_on", channel=4, note=65, velocity=0, time=15))
+    midi_track.append(Message("note_on",
+                              channel=4,
+                              note=65,
+                              velocity=70,
+                              time=120))
+    midi_track.append(Message("note_on",
+                              channel=4,
+                              note=65,
+                              velocity=0,
+                              time=240))
     midi_file.tracks.append(midi_track)
 
     song = Song()
@@ -337,7 +377,7 @@ def test_build_tracks_from_midifile_treats_zero_velocity_note_on_as_note_off():
         Track(
             channel=4,
             instrument=8,
-            note_list=[Note(pitch=65, start=5, duration=15, velocity=70)],
+            note_list=[Note(pitch=65, start=1, duration=2, velocity=70)],
         )
     ]
 
@@ -358,19 +398,21 @@ def test_build_tracks_from_midifile_rejects_non_midifile_inputs():
         imported_track_strategy(),
         max_size=Song.MAX_TRACKS,
     ),
-    tempo=st.integers(min_value=40, max_value=220),
+    bpm=st.integers(min_value=40, max_value=220),
     numerator=st.integers(min_value=1, max_value=7),
     denominator=st.sampled_from([1, 2, 4, 8, 16]),
 )
 def test_build_tracks_from_midifile_round_trips_generated_midi_data(
     tracks,
-    tempo,
+    bpm,
     numerator,
     denominator,
 ):
     midi_file = MidiFile(type=1)
     metadata_track = MidiTrack()
-    metadata_track.append(MetaMessage("set_tempo", tempo=bpm2tempo(tempo), time=0))
+    metadata_track.append(MetaMessage("set_tempo",
+                                      tempo=bpm2tempo(bpm),
+                                      time=0))
     metadata_track.append(
         MetaMessage(
             "time_signature",
@@ -384,10 +426,10 @@ def test_build_tracks_from_midifile_round_trips_generated_midi_data(
     for track in tracks:
         midi_file.tracks.append(midi_track_from_track(track))
 
-    song = Song(tempo=100, length=16, signature=(4, 4))
+    song = Song(bpm=100, length=16, signature=(4, 4))
     song.build_tracks_from_midifile(midi_file)
 
-    assert song.tempo == tempo
+    assert song.bpm == bpm
     assert song.signature == (numerator, denominator)
     assert song.track_list == tracks
     if tracks:

@@ -14,6 +14,8 @@ export PYTHONPATH
 
 all: check
 
+run: 
+	python src/Pytone/main.py
 venv:
 	python -m venv venv
 
