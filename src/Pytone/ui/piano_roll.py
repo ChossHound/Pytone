@@ -1,16 +1,19 @@
 import pygame
 import pygame.freetype 
-import os
 from models.note import Note
 from typing import List
 from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 from ui.cursor import Cursor
 
 BPM: int = 120
-MAX_SONG_DURATION: int = 60 * 10 * 4 * BPM  # 10 minutes = seconds * min/second * beats per measure * beats per minute
+MAX_SONG_DURATION: int = 16 / (BPM / 60) * 60 * 3  # beats = beatspermeasure / beatspersecond * secondsperminute * minutes
 MIN_BEAT_DURATION: int = 4
-BEAT_WIDTH: int = 2 * PIXEL_SCALE
+BEAT_WIDTH: int = 4 * PIXEL_SCALE
 STEP_HEIGHT: int = 8 * PIXEL_SCALE
+KEYS_PER_OCTAVE: int = 12
+NUM_OCTAVES: int = 8
+
+# colors
 NOTE_COLOR: tuple[int, int, int] = (81, 152, 179)
 GRID_COLOR: tuple[int, int, int] = (74, 101, 108)
 ALT_GRID_COLOR: tuple[int, int, int] = (58, 82, 88)
@@ -20,8 +23,8 @@ ACCIDENTAL_KEY_COLOR: tuple[int, int, int] = (29, 29, 29)
 KEY_COLORS: list[tuple[int, int, int]] = [
     NATURAL_KEY_COLOR, ACCIDENTAL_KEY_COLOR, NATURAL_KEY_COLOR, ACCIDENTAL_KEY_COLOR, NATURAL_KEY_COLOR, ACCIDENTAL_KEY_COLOR, NATURAL_KEY_COLOR, NATURAL_KEY_COLOR, ACCIDENTAL_KEY_COLOR, NATURAL_KEY_COLOR, ACCIDENTAL_KEY_COLOR, NATURAL_KEY_COLOR
 ]
-KEYS_PER_OCTAVE: int = 12
-NUM_OCTAVES: int = 8
+MEASURE_COLOR: tuple[int, int, int] = (24, 34, 36)
+PLAY_HEAD_COLOR: tuple[int, int, int] = (255, 255, 153)
 
 class PianoRoll:
     def __init__(self, screen, dimension: pygame.Rect):
@@ -31,6 +34,7 @@ class PianoRoll:
         self.cropping_note: bool = False
         self.dimension = dimension
         self.piano_size = dimension.x
+        self.ribbon_size = dimension.y
         self.dimension.width = MAX_SONG_DURATION*BEAT_WIDTH
         self.dimension.height = NUM_OCTAVES*STEP_HEIGHT*KEYS_PER_OCTAVE
         self.FONT = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
@@ -72,9 +76,10 @@ class PianoRoll:
 
     def end_ghost_note(self):
         if self.ghost_note is not None:
-            self.add_note(self.ghost_note)
-            self.ghost_note = None
-            self.cropping_note = False
+            if self.ghost_note.duration > 0:
+                self.add_note(self.ghost_note)
+                self.ghost_note = None
+                self.cropping_note = False
 
     def get_rect(self, note: Note) -> pygame.Rect:
         # Convert note properties to a pygame.Rect
@@ -90,13 +95,13 @@ class PianoRoll:
             # if we were already drawing a note: continue
             self.update_ghost_note(Cursor().get_position())
             # if we are not drawing a note and over the piano: make a sound
-            if self.ghost_note is None and not Cursor().is_overlapping(self.dimension) and Cursor().is_holding():
+            if self.ghost_note is None and Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)) and Cursor().is_holding():
                 print(self.apply_dimension(Cursor().get_position())[1]//STEP_HEIGHT)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
                 #check if over piano or screen
-                if Cursor().is_overlapping(self.dimension):
+                if Cursor().is_overlapping((self.piano_size, self.ribbon_size, SCREEN_WIDTH, SCREEN_HEIGHT)):
                     #check if any notes are hovered
                     for n in self.notes:
                         note_rect: pygame.Rect = self.get_rect(n)
@@ -116,7 +121,7 @@ class PianoRoll:
                     #if no notes are hovered: make a new note
                     if self.ghost_note is None:
                         self.start_ghost_note(Cursor().get_position())
-                else:
+                elif Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)):
                     print(self.apply_dimension(Cursor().get_position())[1]//STEP_HEIGHT)
 
         if event.type == pygame.MOUSEBUTTONUP:
@@ -125,8 +130,8 @@ class PianoRoll:
 
         if event.type == pygame.MOUSEWHEEL:
             self.dimension.y += event.y * PIXEL_SCALE * 4
-            self.dimension.y = min(0, max(self.dimension.y, SCREEN_HEIGHT - KEYS_PER_OCTAVE*NUM_OCTAVES*STEP_HEIGHT))
-            
+            self.dimension.y = min(self.ribbon_size, max(self.dimension.y, SCREEN_HEIGHT - KEYS_PER_OCTAVE*NUM_OCTAVES*STEP_HEIGHT))
+
             self.dimension.x -= event.x * PIXEL_SCALE * 4
             self.dimension.x = min(self.piano_size, max(self.dimension.x, SCREEN_WIDTH - self.dimension.width))
 
@@ -144,6 +149,11 @@ class PianoRoll:
             color_index: int = i % KEYS_PER_OCTAVE
             pygame.draw.rect(self.screen, KEY_COLORS[color_index], (0, i*STEP_HEIGHT + self.dimension.y, self.dimension.x, STEP_HEIGHT))
         
+        # draw beat markers
+        for i in range(0, 120, 16):
+            start: int = i*BEAT_WIDTH + self.dimension.x
+            pygame.draw.rect(self.screen, MEASURE_COLOR, (start, 0, PIXEL_SCALE, SCREEN_HEIGHT))
+
         # draw octave numbers
         for i in range(1, NUM_OCTAVES + 1, 1):
             self.FONT.render_to(self.screen, (self.dimension.x - 5*PIXEL_SCALE, i*STEP_HEIGHT*KEYS_PER_OCTAVE + self.dimension.y - 7*PIXEL_SCALE), str(NUM_OCTAVES + 1 - i), ACCIDENTAL_KEY_COLOR)
@@ -154,3 +164,6 @@ class PianoRoll:
         if self.ghost_note is not None:
             pygame.draw.rect(self.screen, GHOST_NOTE_COLOR,
                              self.get_rect(self.ghost_note))
+
+        # draw play head
+        pygame.draw.rect(self.screen, PLAY_HEAD_COLOR, pygame.Rect(self.current_beat * BEAT_WIDTH + self.dimension.x, 64, PIXEL_SCALE, SCREEN_HEIGHT))
