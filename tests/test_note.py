@@ -69,3 +69,22 @@ def test_note_rejects_non_integer_duration():
 def test_note_rejects_duration_shorter_than_a_sixteenth_note():
     with pytest.raises(ValueError, match="duration must be at least 1"):
         Note(pitch=60, start=0, duration=0)
+
+
+def test_parse_note_to_pitch_accepts_multi_digit_octaves():
+    assert Note.parse_note_to_pitch("C10") == 120
+
+
+def test_parse_note_to_pitch_parses_multi_digit_octaves_before_range_check():
+    with pytest.raises(ValueError, match="g#10 is not a valid midi note"):
+        Note.parse_note_to_pitch("g#10")
+
+
+def test_parse_note_to_pitch_supports_enharmonic_aliases_within_octave():
+    assert Note.parse_note_to_pitch("F#2") == Note.parse_note_to_pitch("Gb2")
+
+
+def test_parse_note_to_pitch_documents_boundary_accidentals_by_behavior():
+    assert Note.parse_note_to_pitch("B#0") == 12
+    with pytest.raises(ValueError, match="Cb0 is not a valid midi note"):
+        Note.parse_note_to_pitch("Cb0")

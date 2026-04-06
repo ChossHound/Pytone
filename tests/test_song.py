@@ -17,6 +17,13 @@ Track = track_module.Track
 Song = song_module.Song
 
 
+def test_song_general_midi_lookup_maps_names_and_codes():
+    assert Song.GENERAL_MIDI_INSTRUMENTS["flute"] == 73
+    assert Song.instrument_code("Acoustic Grand Piano") == 0
+    assert Song.instrument_code("synthstrings_1") == 50
+    assert Song.instrument_name(73) == "Flute"
+
+
 def midi_track_from_track(track):
     ticks_per_beat = MidiFile().ticks_per_beat
 

@@ -3,6 +3,13 @@ import os
 from collections import defaultdict
 from typing import Any, List, Tuple, Optional
 from .track import Track
+from .instruments import (
+    GENERAL_MIDI_INSTRUMENT_NAMES,
+    GENERAL_MIDI_INSTRUMENTS,
+    InstrumentInput,
+    instrument_name,
+    resolve_instrument,
+)
 from mido import Message, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
 from .note import Note
 
@@ -10,6 +17,8 @@ from .note import Note
 class Song:
     MAX_TRACKS = 4
     STEPS_PER_BEAT = Note.STEPS_PER_BEAT
+    GENERAL_MIDI_INSTRUMENTS = GENERAL_MIDI_INSTRUMENTS
+    GENERAL_MIDI_INSTRUMENT_NAMES = GENERAL_MIDI_INSTRUMENT_NAMES
     """Class to represent an entire song in the Pytone app.
 
     Args:
@@ -36,6 +45,16 @@ class Song:
     def get_max_tracks(cls) -> int:
         """Return the maximum number of tracks allowed per song."""
         return cls.MAX_TRACKS
+
+    @staticmethod
+    def instrument_code(instrument: InstrumentInput) -> int:
+        """Resolve a General MIDI instrument name into its program number."""
+        return resolve_instrument(instrument)
+
+    @staticmethod
+    def instrument_name(program: int) -> str:
+        """Return the canonical General MIDI name for a program number."""
+        return instrument_name(program)
 
     def add_track(self, track: Any) -> None:
         """Add a track to the song if capacity allows."""

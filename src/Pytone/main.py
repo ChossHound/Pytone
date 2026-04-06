@@ -9,7 +9,7 @@ def main() -> None:
     """
     song = Song()
     track_1 = Track()
-    track_2 = Track(instrument=73)
+    track_2 = Track(instrument="flute")
 
     track_1.add_note(Note(pitch=60, start=0, duration=16))
     track_1.add_note(Note(pitch=64, start=0, duration=16))

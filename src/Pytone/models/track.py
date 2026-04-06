@@ -8,6 +8,7 @@
     """
 from typing import List, Any, Optional
 from .note import Note
+from .instruments import InstrumentInput, resolve_instrument
 
 
 class Track:
@@ -24,7 +25,7 @@ class Track:
 
     def __init__(self, note_list: Optional[list[Note]] = None,
                  channel: int = 0,
-                 instrument: int = 0) -> None:
+                 instrument: InstrumentInput = 0) -> None:
         self._note_list = [] if note_list is None else note_list
 
         if channel < 0:
@@ -33,6 +34,8 @@ class Track:
             self._channel = channel % 16
         else:
             self._channel = channel
+
+        instrument = resolve_instrument(instrument)
 
         if instrument < 0:
             instrument = 0
@@ -72,7 +75,8 @@ class Track:
         return self._instrument
 
     @instrument.setter
-    def instrument(self, value: int) -> None:
+    def instrument(self, value: InstrumentInput) -> None:
+        value = resolve_instrument(value)
         self._instrument = max(0, min(127, value))
 
     @instrument.deleter
