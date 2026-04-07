@@ -67,7 +67,7 @@ class Note:
         Accidentals are applied within the given octave only; they do not wrap
         across octave boundaries. For example, ``B#0`` resolves to ``12``,
         while ``Cb0`` resolves to ``-1`` and is therefore rejected as out of
-        the MIDI range.
+        the MIDI range. Notes can range from C0 up to G10.
 
         Args:
             input_note (str): note label
@@ -118,7 +118,7 @@ class Note:
 
     @staticmethod
     def parse_pitch_to_note(pitch_value: int) -> str:
-        """Takes in an integer value and converts it to a string representing 
+        """Takes in an integer value and converts it to a string representing
             the note's letter and octave.
 
         Args:

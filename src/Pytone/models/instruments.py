@@ -142,7 +142,8 @@ GENERAL_MIDI_PROGRAM_NAMES: tuple[str, ...] = (
 
 
 def normalize_instrument_name(name: str) -> str:
-    """Normalize instrument names for case- and punctuation-insensitive lookups."""
+    """Normalize instrument names for case and punctuation-insensitive
+        lookups."""
     normalized = re.sub(r"[^a-z0-9]+", "_", name.strip().lower())
     normalized = re.sub(r"_+", "_", normalized).strip("_")
     return _GENERAL_MIDI_ALIASES.get(normalized, normalized)
@@ -173,7 +174,8 @@ GENERAL_MIDI_INSTRUMENTS = MappingProxyType(_GENERAL_MIDI_LOOKUP)
 
 
 def resolve_instrument(value: InstrumentInput) -> int:
-    """Resolve an instrument name or integer into a General MIDI program number."""
+    """Resolve an instrument name or integer into a General MIDI program 
+        number."""
     if isinstance(value, int):
         return value
     if not isinstance(value, str):

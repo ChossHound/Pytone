@@ -2,6 +2,7 @@
 import os
 from collections import defaultdict
 from typing import Any, List, Tuple, Optional
+from mido import Message, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
 from .track import Track
 from .instruments import (
     GENERAL_MIDI_INSTRUMENT_NAMES,
@@ -10,7 +11,6 @@ from .instruments import (
     instrument_name,
     resolve_instrument,
 )
-from mido import Message, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
 from .note import Note
 
 

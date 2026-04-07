@@ -9,14 +9,14 @@ def main() -> None:
     """
     song = Song()
     track_1 = Track()
-    track_2 = Track(instrument="flute")
+    track_2 = Track(instrument="Taiko Drum")
 
     track_1.add_note(Note(pitch=60, start=0, duration=16))
     track_1.add_note(Note(pitch=64, start=0, duration=16))
     track_1.add_note(Note(pitch=67, start=0, duration=16))
-    track_2.add_note(Note(pitch=72, start=4, duration=16))
-    track_2.add_note(Note(pitch=76, start=6, duration=16))
-    track_2.add_note(Note(pitch=79, start=8, duration=16))
+    track_2.add_note(Note(pitch=73, start=4, duration=16))
+    track_2.add_note(Note(pitch=73, start=6, duration=16))
+    track_2.add_note(Note(pitch=74, start=8, duration=16))
 
     song.add_track(track=track_1)
     song.add_track(track=track_2)
