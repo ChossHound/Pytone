@@ -112,7 +112,7 @@ class PianoRoll:
             # if we are deleting notes: delete this one too
             if Cursor().is_holding_right():
                 n: Note = self.get_note_at_cursor()
-                if not isinstance(n, None):
+                if n is not None:
                     self.notes.remove(n)
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -144,7 +144,7 @@ class PianoRoll:
 
             if event.button == 3: #right click
                 n: Note = self.get_note_at_cursor()
-                if not isinstance(n, None):
+                if n is not None:
                     self.notes.remove(n)
 
         elif event.type == pygame.MOUSEBUTTONUP:
