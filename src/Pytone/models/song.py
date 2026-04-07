@@ -63,7 +63,19 @@ class Song:
                 f"Song can only contain {self.get_max_tracks()} tracks."
             )
 
+        if getattr(track, "channel_was_provided", True) is False:
+            track._channel = self._next_available_channel()
+
         self.track_list.append(track)
+
+    def _next_available_channel(self) -> int:
+        """Return the lowest MIDI channel not currently used by the song."""
+        used_channels = {track.channel for track in self.track_list}
+
+        for channel in range(16):
+            if channel not in used_channels:
+                return channel
+        return 0
 
     def remove_track(self, index: int) -> Any:
         """Remove and return the track at the given index."""

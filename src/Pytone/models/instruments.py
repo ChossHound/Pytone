@@ -141,6 +141,59 @@ GENERAL_MIDI_PROGRAM_NAMES: tuple[str, ...] = (
 )
 
 
+GENERAL_MIDI_DRUM_NOTE_NAMES = MappingProxyType(
+    {
+        35: "Acoustic Bass Drum",
+        36: "Bass Drum 1",
+        37: "Side Stick",
+        38: "Acoustic Snare",
+        39: "Hand Clap",
+        40: "Electric Snare",
+        41: "Low Floor Tom",
+        42: "Closed Hi Hat",
+        43: "High Floor Tom",
+        44: "Pedal Hi Hat",
+        45: "Low Tom",
+        46: "Open Hi Hat",
+        47: "Low-Mid Tom",
+        48: "Hi-Mid Tom",
+        49: "Crash Cymbal 1",
+        50: "High Tom",
+        51: "Ride Cymbal 1",
+        52: "Chinese Cymbal",
+        53: "Ride Bell",
+        54: "Tambourine",
+        55: "Splash Cymbal",
+        56: "Cowbell",
+        57: "Crash Cymbal 2",
+        58: "Vibraslap",
+        59: "Ride Cymbal 2",
+        60: "Hi Bongo",
+        61: "Low Bongo",
+        62: "Mute Hi Conga",
+        63: "Open Hi Conga",
+        64: "Low Conga",
+        65: "High Timbale",
+        66: "Low Timbale",
+        67: "High Agogo",
+        68: "Low Agogo",
+        69: "Cabasa",
+        70: "Maracas",
+        71: "Short Whistle",
+        72: "Long Whistle",
+        73: "Short Guiro",
+        74: "Long Guiro",
+        75: "Claves",
+        76: "Hi Wood Block",
+        77: "Low Wood Block",
+        78: "Mute Cuica",
+        79: "Open Cuica",
+        80: "Mute Triangle",
+        81: "Open Triangle",
+    }
+)
+
+
 def normalize_instrument_name(name: str) -> str:
     """Normalize instrument names for case and punctuation-insensitive
         lookups."""
@@ -158,6 +211,22 @@ _GENERAL_MIDI_ALIASES = {
     "bagpipe": "bag_pipe",
 }
 
+_DRUM_NOTE_ALIASES = {
+    "kick": "acoustic_bass_drum",
+    "bass_drum": "acoustic_bass_drum",
+    "rimshot": "side_stick",
+    "snare": "acoustic_snare",
+    "closed_hihat": "closed_hi_hat",
+    "closed_hi_hat": "closed_hi_hat",
+    "pedal_hihat": "pedal_hi_hat",
+    "pedal_hi_hat": "pedal_hi_hat",
+    "open_hihat": "open_hi_hat",
+    "open_hi_hat": "open_hi_hat",
+    "crash": "crash_cymbal_1",
+    "ride": "ride_cymbal_1",
+    "woodblock": "hi_wood_block",
+}
+
 
 _GENERAL_MIDI_LOOKUP = {
     normalize_instrument_name(name): code
@@ -171,6 +240,15 @@ GENERAL_MIDI_INSTRUMENT_NAMES = MappingProxyType(
     dict(enumerate(GENERAL_MIDI_PROGRAM_NAMES))
 )
 GENERAL_MIDI_INSTRUMENTS = MappingProxyType(_GENERAL_MIDI_LOOKUP)
+
+_DRUM_NOTE_LOOKUP = {
+    normalize_instrument_name(name): note
+    for note, name in GENERAL_MIDI_DRUM_NOTE_NAMES.items()
+}
+for alias, canonical in _DRUM_NOTE_ALIASES.items():
+    _DRUM_NOTE_LOOKUP[alias] = _DRUM_NOTE_LOOKUP[canonical]
+
+DRUM_NOTES = MappingProxyType(_DRUM_NOTE_LOOKUP)
 
 
 def resolve_instrument(value: InstrumentInput) -> int:

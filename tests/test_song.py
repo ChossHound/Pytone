@@ -180,6 +180,26 @@ def test_create_midifile_exports_all_tracks_and_uses_delta_times(tmp_path):
     assert second_messages[1].time == midi_file.ticks_per_beat // 2
 
 
+def test_create_midifile_uses_updated_track_instrument_value(tmp_path):
+    song = Song()
+    track = Track(
+        channel=3,
+        instrument=24,
+        note_list=[Note(pitch=60, start=0, duration=4, velocity=90)],
+    )
+    track.instrument = "Voice Oohs"
+    song.add_track(track)
+
+    output_path = song.create_midifile(str(tmp_path / "updated_instrument.mid"))
+    midi_file = MidiFile(output_path)
+
+    messages = [message for message in midi_file.tracks[0] if not message.is_meta]
+
+    assert messages[0].type == "program_change"
+    assert messages[0].channel == 3
+    assert messages[0].program == Song.instrument_code("Voice Oohs")
+
+
 def test_song_instances_are_independent():
     first_song = Song(bpm=120, length=8, signature=(3, 4), loop=False)
     second_song = Song()
@@ -197,6 +217,30 @@ def test_song_instances_are_independent():
     assert second_song.signature == (4, 4)
     assert second_song.loop is True
     assert second_song.track_list == []
+
+
+def test_song_add_track_auto_assigns_distinct_channels_when_not_provided():
+    song = Song()
+    first_track = Track(instrument=24, note_list=[])
+    second_track = Track(instrument="Voice Oohs", note_list=[])
+
+    song.add_track(first_track)
+    song.add_track(second_track)
+
+    assert first_track.channel == 0
+    assert second_track.channel == 1
+
+
+def test_song_add_track_preserves_explicit_channel_and_skips_it_for_auto_assign():
+    song = Song()
+    explicit_track = Track(channel=3, instrument=24, note_list=[])
+    implicit_track = Track(instrument="Voice Oohs", note_list=[])
+
+    song.add_track(explicit_track)
+    song.add_track(implicit_track)
+
+    assert explicit_track.channel == 3
+    assert implicit_track.channel == 0
 
 
 @given(st.lists(track_strategy(), max_size=Song.MAX_TRACKS))
