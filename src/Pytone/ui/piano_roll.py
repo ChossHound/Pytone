@@ -90,45 +90,68 @@ class PianoRoll:
         r: pygame.Rect = pygame.Rect(x, y, width, height)
         return r
 
+    def get_note_at_cursor(self) -> Note | None:
+        #check if over piano or screen
+        if Cursor().is_overlapping((self.piano_size, self.ribbon_size, SCREEN_WIDTH, SCREEN_HEIGHT)):
+            #check if any notes are hovered
+            for n in self.notes:
+                note_rect: pygame.Rect = self.get_rect(n)
+                if Cursor().is_overlapping(note_rect):
+                    return n
+        return None
+
     def process(self, event):
+        print("process")
         if event.type == pygame.MOUSEMOTION:
+            print("mouse motion")
             # if we were already drawing a note: continue
             self.update_ghost_note(Cursor().get_position())
             # if we are not drawing a note and over the piano: make a sound
-            if self.ghost_note is None and Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)) and Cursor().is_holding():
+            if self.ghost_note is None and Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)) and Cursor().is_holding_left():
                 print(self.apply_dimension(Cursor().get_position())[1]//STEP_HEIGHT)
+            # if we are deleting notes: delete this one too
+            if Cursor().is_holding_right():
+                n: Note = self.get_note_at_cursor()
+                if not isinstance(n, None):
+                    self.notes.remove(n)
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
-                #check if over piano or screen
+                # if hovering over piano roll
                 if Cursor().is_overlapping((self.piano_size, self.ribbon_size, SCREEN_WIDTH, SCREEN_HEIGHT)):
-                    #check if any notes are hovered
-                    for n in self.notes:
+                    n: Note = self.get_note_at_cursor()
+                    if n is not None:
                         note_rect: pygame.Rect = self.get_rect(n)
-                        if Cursor().is_overlapping(note_rect):
-                            distance_to_left: int = abs(note_rect.x - Cursor().get_position()[0])
-                            distance_to_right: int = abs(note_rect.x + note_rect.width - Cursor().get_position()[0] + Cursor().size)
-                            
-                            # if more on the left side
-                            if distance_to_left < distance_to_right:
-                                #begin moving note
-                                self.cropping_note = False                       
-                            else:
-                                self.cropping_note = True
-                            self.ghost_note = n
-                            self.notes.remove(n)
-                    
+                        distance_to_left: int = abs(note_rect.x - Cursor().get_position()[0])
+                        distance_to_right: int = abs(note_rect.x + note_rect.width - Cursor().get_position()[0] + Cursor().size)
+                        
+                        # if more on the left side
+                        if distance_to_left < distance_to_right:
+                            #begin moving note
+                            self.cropping_note = False                       
+                        else:
+                            self.cropping_note = True
+                        self.ghost_note = n
+                        self.notes.remove(n)
+                        
                     #if no notes are hovered: make a new note
-                    if self.ghost_note is None:
+                    elif self.ghost_note is None:
                         self.start_ghost_note(Cursor().get_position())
+                #if hovering over piano
                 elif Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)):
+                    #play note on piano
                     print(self.apply_dimension(Cursor().get_position())[1]//STEP_HEIGHT)
 
-        if event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 3: #right click
+                n: Note = self.get_note_at_cursor()
+                if not isinstance(n, None):
+                    self.notes.remove(n)
+
+        elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # Left click
                 self.end_ghost_note()
 
-        if event.type == pygame.MOUSEWHEEL:
+        elif event.type == pygame.MOUSEWHEEL:
             self.dimension.y += event.y * PIXEL_SCALE * 4
             self.dimension.y = min(self.ribbon_size, max(self.dimension.y, SCREEN_HEIGHT - KEYS_PER_OCTAVE*NUM_OCTAVES*STEP_HEIGHT))
 

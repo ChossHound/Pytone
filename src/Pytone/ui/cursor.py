@@ -15,7 +15,8 @@ class Cursor:
         return cls._instance
 
     def init(self, screen=None, color=None, size=None) -> None:
-        self.holding = False
+        self.holding_left = False
+        self.holding_right = False
         self.screen = screen
         self.color = color
         self.size = size * PIXEL_SCALE
@@ -37,13 +38,22 @@ class Cursor:
         return r
 
     def process(self, event) -> None:
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            self.holding = True
-        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            self.holding = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                self.holding_left = True
+            if event.button == 3:
+                self.holding_right = True
+        if event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                self.holding_left = False
+            if event.button == 3:
+                self.holding_right = False
         
-    def is_holding(self) -> bool:
-        return self.holding
+    def is_holding_left(self) -> bool:
+        return self.holding_left
+
+    def is_holding_right(self) -> bool:
+        return self.holding_right
 
     def draw(self):
         x, y = self.get_position()
