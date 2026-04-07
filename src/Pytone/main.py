@@ -2,7 +2,7 @@ from models.song import Song
 from models.track import Track
 from models.note import Note
 from models.audioEngine import Engine
-
+from ui import gui
 
 def main() -> None:
     """import gaurd
@@ -24,8 +24,8 @@ def main() -> None:
     engine = Engine()
     engine.start()
     engine.play_midi_once(mid)
+    gui.Run()
     # engine.play_midi(mid, loop=True)
-
 
 if __name__ == "__main__":
     main()
