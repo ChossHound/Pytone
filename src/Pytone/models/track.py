@@ -8,6 +8,7 @@
     """
 from typing import List, Any, Optional
 from .note import Note
+from .instruments import InstrumentInput, resolve_instrument
 
 
 class Track:
@@ -23,16 +24,16 @@ class Track:
     # - note_list could be better implemented as a dictionary probably.
 
     def __init__(self, note_list: Optional[list[Note]] = None,
-                 channel: int = 0,
-                 instrument: int = 0) -> None:
+                 channel: Optional[int] = None,
+                 instrument: InstrumentInput = 0) -> None:
         self._note_list = [] if note_list is None else note_list
 
-        if channel < 0:
+        self._channel_was_provided = channel is not None
+        if channel is None:
             channel = 0
-        if channel > 15:
-            self._channel = channel % 16
-        else:
-            self._channel = channel
+        self._channel = self._normalize_channel(channel)
+
+        instrument = resolve_instrument(instrument)
 
         if instrument < 0:
             instrument = 0
@@ -42,6 +43,14 @@ class Track:
             self._instrument = instrument
 
         self._midi_msg_list: List[Any]
+
+    @staticmethod
+    def _normalize_channel(channel: int) -> int:
+        if channel < 0:
+            return 0
+        if channel > 15:
+            return channel % 16
+        return channel
 
     # ----------Getters & Setters----------
 
@@ -54,9 +63,15 @@ class Track:
         """
         return self._channel
 
+    @property
+    def channel_was_provided(self) -> bool:
+        """Whether the channel was explicitly set by the caller."""
+        return self._channel_was_provided
+
     @channel.setter
     def channel(self, num: int) -> None:
-        self._channel = num
+        self._channel = self._normalize_channel(num)
+        self._channel_was_provided = True
 
     @channel.deleter
     def channel(self):
@@ -72,7 +87,8 @@ class Track:
         return self._instrument
 
     @instrument.setter
-    def instrument(self, value: int) -> None:
+    def instrument(self, value: InstrumentInput) -> None:
+        value = resolve_instrument(value)
         self._instrument = max(0, min(127, value))
 
     @instrument.deleter

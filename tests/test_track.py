@@ -15,6 +15,13 @@ def test_track_stores_channel_in_valid_range():
     assert track.channel == 7
 
 
+def test_track_defaults_to_channel_zero_until_a_song_assigns_one():
+    track = Track(instrument=10)
+
+    assert track.channel == 0
+    assert track.channel_was_provided is False
+
+
 def test_track_wraps_channel_above_midi_limit():
     track = Track(channel=17, instrument=10)
 
@@ -25,6 +32,12 @@ def test_track_stores_instrument_in_valid_range():
     track = Track(channel=0, instrument=42)
 
     assert track.instrument == 42
+
+
+def test_track_accepts_general_midi_instrument_names():
+    track = Track(channel=0, instrument="flute")
+
+    assert track.instrument == 73
 
 
 def test_track_wraps_instrument_above_midi_limit():
@@ -46,3 +59,21 @@ def test_track_channel_property_setter_updates_value():
     track.channel = 12
 
     assert track.channel == 12
+    assert track.channel_was_provided is True
+
+
+def test_track_instrument_property_setter_accepts_general_midi_name():
+    track = Track(channel=0, instrument=0, note_list=[])
+
+    track.instrument = "Electric Piano 1"
+
+    assert track.instrument == 4
+
+
+def test_track_rejects_unknown_general_midi_name():
+    try:
+        Track(channel=0, instrument="laser harp")
+    except ValueError as exc:
+        assert "Unknown General MIDI instrument" in str(exc)
+    else:
+        raise AssertionError("Expected an unknown instrument name to fail")

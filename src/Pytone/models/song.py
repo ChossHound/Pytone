@@ -2,14 +2,23 @@
 import os
 from collections import defaultdict
 from typing import Any, List, Tuple, Optional
-from .track import Track
 from mido import Message, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
+from .track import Track
+from .instruments import (
+    GENERAL_MIDI_INSTRUMENT_NAMES,
+    GENERAL_MIDI_INSTRUMENTS,
+    InstrumentInput,
+    instrument_name,
+    resolve_instrument,
+)
 from .note import Note
 
 
 class Song:
     MAX_TRACKS = 4
     STEPS_PER_BEAT = Note.STEPS_PER_BEAT
+    GENERAL_MIDI_INSTRUMENTS = GENERAL_MIDI_INSTRUMENTS
+    GENERAL_MIDI_INSTRUMENT_NAMES = GENERAL_MIDI_INSTRUMENT_NAMES
     """Class to represent an entire song in the Pytone app.
 
     Args:
@@ -37,6 +46,16 @@ class Song:
         """Return the maximum number of tracks allowed per song."""
         return cls.MAX_TRACKS
 
+    @staticmethod
+    def instrument_code(instrument: InstrumentInput) -> int:
+        """Resolve a General MIDI instrument name into its program number."""
+        return resolve_instrument(instrument)
+
+    @staticmethod
+    def instrument_name(program: int) -> str:
+        """Return the canonical General MIDI name for a program number."""
+        return instrument_name(program)
+
     def add_track(self, track: Any) -> None:
         """Add a track to the song if capacity allows."""
         if len(self.track_list) >= self.get_max_tracks():
@@ -44,7 +63,19 @@ class Song:
                 f"Song can only contain {self.get_max_tracks()} tracks."
             )
 
+        if getattr(track, "channel_was_provided", True) is False:
+            track._channel = self._next_available_channel()
+
         self.track_list.append(track)
+
+    def _next_available_channel(self) -> int:
+        """Return the lowest MIDI channel not currently used by the song."""
+        used_channels = {track.channel for track in self.track_list}
+
+        for channel in range(16):
+            if channel not in used_channels:
+                return channel
+        return 0
 
     def remove_track(self, index: int) -> Any:
         """Remove and return the track at the given index."""
