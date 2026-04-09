@@ -69,10 +69,15 @@ class PianoRoll:
             x = x // BEAT_WIDTH
             y = y // STEP_HEIGHT
             if self.cropping_note:
+                n: note = self.get_note_at_position(self.ghost_note.start, self.ghost_note.pitch, x - self.ghost_note.start)
+                if n is not None:
+                    x = n.start
                 self.ghost_note.duration = x - self.ghost_note.start
             else:
-                self.ghost_note.pitch = y
-                self.ghost_note.start = x
+                n: note = self.get_note_at_position(x, y, self.ghost_note.duration)
+                if n is None:
+                    self.ghost_note.pitch = y
+                    self.ghost_note.start = x
 
     def end_ghost_note(self):
         if self.ghost_note is not None:
@@ -90,6 +95,16 @@ class PianoRoll:
         r: pygame.Rect = pygame.Rect(x, y, width, height)
         return r
 
+    def get_note_at_position(self, beat: int, pitch: int, width: int) -> Note | None:
+        found_notes: List[Note] = []
+        for n in self.notes:
+            if n.pitch == pitch and n.start < beat + width and n.start + n.duration > beat:
+                found_notes.append(n)
+        if len(found_notes) > 0:
+            found_notes.sort(key=lambda x: x.start)
+            return found_notes[0]
+        return None
+
     def get_note_at_cursor(self) -> Note | None:
         #check if over piano or screen
         if Cursor().is_overlapping((self.piano_size, self.ribbon_size, SCREEN_WIDTH, SCREEN_HEIGHT)):
@@ -101,9 +116,7 @@ class PianoRoll:
         return None
 
     def process(self, event):
-        print("process")
         if event.type == pygame.MOUSEMOTION:
-            print("mouse motion")
             # if we were already drawing a note: continue
             self.update_ghost_note(Cursor().get_position())
             # if we are not drawing a note and over the piano: make a sound
