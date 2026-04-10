@@ -138,7 +138,7 @@ class Track:
             the given pitch/start pair.
         """
         for index, note in enumerate(self.note_list):
-            if note.start == start and note.pitch == index_or_pitch:
+            if note.start == start and note.pitch == pitch:
                 return self.note_list.pop(index)
         return None
 

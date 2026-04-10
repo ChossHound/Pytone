@@ -63,6 +63,11 @@ class PianoRoll:
         y = (108 + 11 - y)
         return y
 
+    def position_from_pitch(self, pitch: int) -> int:
+        y: int = 119 - pitch
+        y *= STEP_HEIGHT
+        return y 
+
     def start_ghost_note(self, position: tuple[int, int]):
         # Extract pitch and beat from the position
         x, y = self.apply_dimension(position)
@@ -96,7 +101,7 @@ class PianoRoll:
     def get_rect(self, note: Note) -> pygame.Rect:
         # Convert note properties to a pygame.Rect
         x = note.start * BEAT_WIDTH + self.dimension.x
-        y = note.pitch * STEP_HEIGHT + self.dimension.y
+        y = self.position_from_pitch(note.pitch) + self.dimension.y
         width = note.duration * BEAT_WIDTH
         height = STEP_HEIGHT
         r: pygame.Rect = pygame.Rect(x, y, width, height)
