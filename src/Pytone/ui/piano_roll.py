@@ -83,13 +83,18 @@ class PianoRoll:
             x = x // BEAT_WIDTH
             y = self.pitch_from_position(y)
             if self.cropping_note:
+                n: note = self.get_note_at_position(self.ghost_note.start, self.ghost_note.pitch, x - self.ghost_note.start)
+                if n is not None:
+                    x = n.start
                 self.ghost_note.duration = x - self.ghost_note.start
             else:
-                if self.ghost_note.pitch != y:
-                    Engine().send_note_off(self.track.channel, self.ghost_note.pitch)          
-                    Engine().send_note_on(self.track.channel, y, 100)
-                self.ghost_note.pitch = y
-                self.ghost_note.start = x
+                n: note = self.get_note_at_position(x, y, self.ghost_note.duration)
+                if n is None:
+                    if self.ghost_note.pitch != y:
+                        Engine().send_note_off(self.track.channel, self.ghost_note.pitch)          
+                        Engine().send_note_on(self.track.channel, y, 100)
+                    self.ghost_note.pitch = y
+                    self.ghost_note.start = x
 
     def end_ghost_note(self):
         if self.ghost_note is not None:
@@ -106,6 +111,16 @@ class PianoRoll:
         height = STEP_HEIGHT
         r: pygame.Rect = pygame.Rect(x, y, width, height)
         return r
+
+    def get_note_at_position(self, beat: int, pitch: int, width: int) -> Note | None:
+        found_notes: List[Note] = []
+        for n in self.notes:
+            if n.pitch == pitch and n.start < beat + width and n.start + n.duration > beat:
+                found_notes.append(n)
+        if len(found_notes) > 0:
+            found_notes.sort(key=lambda x: x.start)
+            return found_notes[0]
+        return None
 
     def get_note_at_cursor(self) -> Note | None:
         #check if over piano or screen
