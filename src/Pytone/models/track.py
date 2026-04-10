@@ -126,22 +126,17 @@ class Track:
         for note in notes:
             self.add_note(note)
 
-    def remove_note(self, index_or_pitch: int, start: Optional[int] = None
-                    ) -> Optional[Note]:
+    def remove_note(self, pitch: int, start: int) -> Optional[Note]:
         """Remove a note by index or by pitch/start location.
 
         Args:
-            index_or_pitch (int): Note index when ``start`` is omitted, or the
-                MIDI pitch when ``start`` is provided.
-            start (Optional[int]): Absolute start time in 16th-note steps.
+            pitch (int): the MIDI pitch when ``start`` is provided.
+            start (int): Absolute start time in 16th-note steps.
 
         Returns:
             Optional[Note]: The removed note, or ``None`` when no note matches
             the given pitch/start pair.
         """
-        if start is None:
-            return self._note_list.pop(index_or_pitch)
-
         for index, note in enumerate(self.note_list):
             if note.start == start and note.pitch == index_or_pitch:
                 return self.note_list.pop(index)

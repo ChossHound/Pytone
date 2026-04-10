@@ -5,6 +5,7 @@ from typing import List
 from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 from ui.cursor import Cursor
 from models.audioEngine import Engine
+from models.track import Track
 
 BPM: int = 120
 MAX_SONG_DURATION: int = 16 / (BPM / 60) * 60 * 3  # beats = beatspermeasure / beatspersecond * secondsperminute * minutes
@@ -30,7 +31,7 @@ PLAY_HEAD_COLOR: tuple[int, int, int] = (255, 255, 153)
 class PianoRoll:
     def __init__(self, screen, dimension: pygame.Rect):
         self.screen: pygame.Surface = screen
-        self.notes: list[Note] = []
+        self.track: Track = Track(instrument=0)
         self.ghost_note: Note | None = None
         self.cropping_note: bool = False
         self.current_note = Note(0, 0, duration=MIN_BEAT_DURATION)
@@ -43,7 +44,7 @@ class PianoRoll:
         self.FONT = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
 
     def add_note(self, note: Note):
-        self.notes.append(note)
+        self.track.add_note(note)
 
     def apply_dimension(self, position: tuple[int, int]) -> tuple[int, int]:
         x: int = position[0]
@@ -79,6 +80,9 @@ class PianoRoll:
             if self.cropping_note:
                 self.ghost_note.duration = x - self.ghost_note.start
             else:
+                if self.ghost_note.pitch != y:
+                    Engine().send_note_off(self.track.channel, self.ghost_note.pitch)          
+                    Engine().send_note_on(self.track.channel, y, 100)
                 self.ghost_note.pitch = y
                 self.ghost_note.start = x
 
@@ -102,7 +106,7 @@ class PianoRoll:
         #check if over piano or screen
         if Cursor().is_overlapping((self.piano_size, self.ribbon_size, SCREEN_WIDTH, SCREEN_HEIGHT)):
             #check if any notes are hovered
-            for n in self.notes:
+            for n in self.track.note_list:
                 note_rect: pygame.Rect = self.get_rect(n)
                 if Cursor().is_overlapping(note_rect):
                     return n
@@ -123,7 +127,7 @@ class PianoRoll:
             if Cursor().is_holding_right():
                 n: Note = self.get_note_at_cursor()
                 if n is not None:
-                    self.notes.remove(n)
+                    self.track.remove_note(n.pitch, n.start)
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
@@ -142,7 +146,7 @@ class PianoRoll:
                         else:
                             self.cropping_note = True
                         self.ghost_note = n
-                        self.notes.remove(n)
+                        self.track.remove_note(n.pitch, n.start)
                         
                     #if no notes are hovered: make a new note
                     elif self.ghost_note is None:
@@ -157,7 +161,7 @@ class PianoRoll:
             if event.button == 3: #right click
                 n: Note = self.get_note_at_cursor()
                 if n is not None:
-                    self.notes.remove(n)
+                    self.track.remove_note(n.pitch, n.start)
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # Left click
@@ -195,7 +199,7 @@ class PianoRoll:
             self.FONT.render_to(self.screen, (self.dimension.x - 5*PIXEL_SCALE, i*STEP_HEIGHT*KEYS_PER_OCTAVE + self.dimension.y - 7*PIXEL_SCALE), str(NUM_OCTAVES + 1 - i), ACCIDENTAL_KEY_COLOR)
 
         # draw notes
-        for note in self.notes:
+        for note in self.track.note_list:
             pygame.draw.rect(self.screen, NOTE_COLOR, self.get_rect(note))
         if self.ghost_note is not None:
             pygame.draw.rect(self.screen, GHOST_NOTE_COLOR,
