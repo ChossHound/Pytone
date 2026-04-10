@@ -114,7 +114,7 @@ class PianoRoll:
 
     def get_note_at_position(self, beat: int, pitch: int, width: int) -> Note | None:
         found_notes: List[Note] = []
-        for n in self.notes:
+        for n in self.track.note_list:
             if n.pitch == pitch and n.start < beat + width and n.start + n.duration > beat:
                 found_notes.append(n)
         if len(found_notes) > 0:
