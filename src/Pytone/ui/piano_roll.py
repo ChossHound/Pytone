@@ -4,6 +4,7 @@ from models.note import Note
 from typing import List
 from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 from ui.cursor import Cursor
+from models.audioEngine import Engine
 
 BPM: int = 120
 MAX_SONG_DURATION: int = 16 / (BPM / 60) * 60 * 3  # beats = beatspermeasure / beatspersecond * secondsperminute * minutes
@@ -32,11 +33,13 @@ class PianoRoll:
         self.notes: list[Note] = []
         self.ghost_note: Note | None = None
         self.cropping_note: bool = False
+        self.current_note = Note(0, 0, duration=MIN_BEAT_DURATION)
         self.dimension = dimension
         self.piano_size = dimension.x
         self.ribbon_size = dimension.y
         self.dimension.width = MAX_SONG_DURATION*BEAT_WIDTH
         self.dimension.height = NUM_OCTAVES*STEP_HEIGHT*KEYS_PER_OCTAVE
+        self.dimension.y = -STEP_HEIGHT*12*4
         self.FONT = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
 
     def add_note(self, note: Note):
@@ -54,11 +57,16 @@ class PianoRoll:
             y = 0
         return (x, y)
 
+    def pitch_from_position(self, y: int) -> int:
+        y = y // STEP_HEIGHT
+        y = (108 + 11 - y)
+        return y
+
     def start_ghost_note(self, position: tuple[int, int]):
         # Extract pitch and beat from the position
         x, y = self.apply_dimension(position)
         x = x // BEAT_WIDTH
-        y = y // STEP_HEIGHT
+        y = self.pitch_from_position(y)
         self.cropping_note = False
         self.ghost_note = Note(y, x, duration=MIN_BEAT_DURATION)
 
@@ -67,7 +75,7 @@ class PianoRoll:
             # make position start at left side of the screen
             x, y = self.apply_dimension(position)
             x = x // BEAT_WIDTH
-            y = y // STEP_HEIGHT
+            y = self.pitch_from_position(y)
             if self.cropping_note:
                 self.ghost_note.duration = x - self.ghost_note.start
             else:
@@ -101,14 +109,16 @@ class PianoRoll:
         return None
 
     def process(self, event):
-        print("process")
         if event.type == pygame.MOUSEMOTION:
-            print("mouse motion")
             # if we were already drawing a note: continue
             self.update_ghost_note(Cursor().get_position())
             # if we are not drawing a note and over the piano: make a sound
             if self.ghost_note is None and Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)) and Cursor().is_holding_left():
-                print(self.apply_dimension(Cursor().get_position())[1]//STEP_HEIGHT)
+                pitch: int = self.pitch_from_position(self.apply_dimension(Cursor().get_position())[1])
+                if self.current_note.pitch != pitch:
+                    Engine().send_note_on(0, pitch, 100)
+                    Engine().send_note_off(0, self.current_note.pitch)
+                    self.current_note.pitch = pitch
             # if we are deleting notes: delete this one too
             if Cursor().is_holding_right():
                 n: Note = self.get_note_at_cursor()
@@ -140,7 +150,9 @@ class PianoRoll:
                 #if hovering over piano
                 elif Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)):
                     #play note on piano
-                    print(self.apply_dimension(Cursor().get_position())[1]//STEP_HEIGHT)
+                    pitch: int = self.pitch_from_position(self.apply_dimension(Cursor().get_position())[1])
+                    self.current_note.pitch = pitch
+                    Engine().send_note_on(0, pitch, 100)
 
             if event.button == 3: #right click
                 n: Note = self.get_note_at_cursor()
@@ -150,6 +162,7 @@ class PianoRoll:
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # Left click
                 self.end_ghost_note()
+                Engine().send_note_off(0, self.current_note.pitch)
 
         elif event.type == pygame.MOUSEWHEEL:
             self.dimension.y += event.y * PIXEL_SCALE * 4
