@@ -28,6 +28,7 @@ KEY_COLORS: list[tuple[int, int, int]] = [
 MEASURE_COLOR: tuple[int, int, int] = (24, 34, 36)
 PLAY_HEAD_COLOR: tuple[int, int, int] = (255, 255, 153)
 
+
 class PianoRoll:
     def __init__(self, screen, dimension: pygame.Rect):
         self.screen: pygame.Surface = screen

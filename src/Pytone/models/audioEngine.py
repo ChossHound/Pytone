@@ -83,7 +83,7 @@ class Engine:
             song (MidiFile): _description_
 
         Returns:
-            Npne: _description_
+            None: _description_
         """
         while True:
             self.play_midi_once(song=song)
