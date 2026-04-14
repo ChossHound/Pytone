@@ -15,18 +15,19 @@ def Run(song: Song | None = None, engine: Engine | None = None) -> None:
     song = Song() if song is None else song
     engine = Engine() if engine is None else engine
     Cursor().init(screen, (255, 255, 255), 2)
+    songribbon: SongRibbon = SongRibbon(screen, 64, song=song, engine=engine)
     pianoroll: PianoRoll = PianoRoll(
         screen,
         pygame.Rect(64, 64, SCREEN_WIDTH-64, SCREEN_HEIGHT),
+        songribbon.get_current_beat,
         song=song,
     )
-    songribbon: SongRibbon = SongRibbon(screen, 64, song=song, engine=engine)
 
     while True:
-        clock.tick(60)
+        dt = clock.tick(60)
         pianoroll.current_beat = songribbon.current_beat
         pianoroll.draw()
-        songribbon.draw()
+        songribbon.draw(dt)
         Cursor().draw()
         pygame.display.flip()
         screen.fill((0, 0, 0))

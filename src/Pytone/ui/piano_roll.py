@@ -1,7 +1,7 @@
 import pygame
 import pygame.freetype 
 from models.note import Note
-from typing import List
+from typing import List, Callable
 from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 from ui.cursor import Cursor
 from models.audioEngine import Engine
@@ -34,11 +34,13 @@ class PianoRoll:
     def __init__(self,
                  screen,
                  dimension: pygame.Rect,
+                 get_current_beat: Callable,
                  song: Song | None = None,
                  track_index: int = 0):
         self.screen: pygame.Surface = screen
         self.song: Song | None = song
         self.track_index: int = track_index
+        self.get_current_beat = get_current_beat
         self.track: Track = self._resolve_track()
         self.ghost_note: Note | None = None
         self.cropping_note: bool = False
@@ -243,4 +245,4 @@ class PianoRoll:
                              self.get_rect(self.ghost_note))
 
         # draw play head
-        pygame.draw.rect(self.screen, PLAY_HEAD_COLOR, pygame.Rect(self.current_beat * BEAT_WIDTH + self.dimension.x, 64, PIXEL_SCALE, SCREEN_HEIGHT))
+        pygame.draw.rect(self.screen, PLAY_HEAD_COLOR, pygame.Rect(self.get_current_beat() * BEAT_WIDTH + self.dimension.x, 64, PIXEL_SCALE, SCREEN_HEIGHT))

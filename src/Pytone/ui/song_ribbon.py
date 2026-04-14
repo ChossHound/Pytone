@@ -7,6 +7,7 @@ from ui.cursor import Cursor
 from ui.piano_roll import BEAT_WIDTH, MAX_SONG_DURATION
 from models.song import Song
 from models.audioEngine import Engine
+from mido import bpm2tempo
 
 BUMPER_COLOR: tuple[int, int, int] = (68, 68, 68)
 DARK_ACCENT: tuple[int, int, int] = (34, 34, 34)
@@ -61,7 +62,7 @@ class SpinBox:
             if event.button == 1:  # Left click
                 if Cursor().is_overlapping(self.plus_rect):
                     self.increment()
-                elif Cursor().is_overlapping (self.minus_rect):
+                elif Cursor().is_overlapping(self.minus_rect):
                     self.decrement()
 
 class SongRibbon:
@@ -83,13 +84,13 @@ class SongRibbon:
         self.playing: bool = False
         self.scrubbing: bool = False
         self.tempo = SpinBox(screen, (552, 8), self.song.bpm, 1, 999)
+        self.elapsed_time: int = 0
         # self.time_signature_numerator = SpinBox(screen, (476, 8), 4, 1, 64)
         # self.time_signature_denomerator = SpinBox(screen, (568, 8), 4, 1, 64, lambda x: x * 2, lambda x: x // 2)
 
-    def draw(self):
-        if self.playing and self.current_beat < self.song_length:
-            self.current_beat += 1
-
+    def draw(self, dt: int):
+        if self.playing:
+            self.elapsed_time += dt
         pygame.draw.rect(self.screen, BUMPER_COLOR, (0, 0, SCREEN_WIDTH, self.size))
 
         # draw play button
@@ -104,7 +105,7 @@ class SongRibbon:
 
         # draw progress bar
         pygame.draw.rect(self.screen, DARK_ACCENT, self.progress_bar)
-        progress: int = (self.current_beat * self.progress_bar.width) // self.song_length
+        progress: int = (self.get_current_beat() * self.progress_bar.width) // self.song_length
         progress = (progress // PIXEL_SCALE) * PIXEL_SCALE
         pygame.draw.rect(self.screen, BUTTON_COLOR, pygame.Rect(self.progress_bar.x, self.progress_bar.y, progress, self.progress_bar.height))
 
@@ -118,6 +119,10 @@ class SongRibbon:
         # self.FONT.render_to(self.screen, (554, 12), "/", TEXT_COLOR)
         # self.time_signature_denomerator.draw()
 
+    def get_current_beat(self) -> int:
+        # print(int(self.elapsed_time / (bpm2tempo(self.tempo.value) / 1000)))
+        return int(self.elapsed_time / (bpm2tempo(self.tempo.value) / 1000 / 4))
+
     def toggle_playback(self):
         self.playing = not self.playing
 
@@ -126,7 +131,7 @@ class SongRibbon:
             self.restart()
         else:
             self.stop()
-    
+
     def stop(self):
         self.playing = False
         self.current_beat = 0
@@ -136,6 +141,7 @@ class SongRibbon:
         self.song.bpm = self.tempo.value
         self.playing = True
         self.current_beat = 0
+        self.elapsed_time = 0
         self.engine.play_midi_async(self.song.create_midifile(path=None))
 
     def process(self, event):
