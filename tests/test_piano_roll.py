@@ -8,6 +8,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
 import pygame
 from hypothesis import given, settings, strategies as st
+from mido import MidiFile, bpm2tempo
 
 
 class _DummySynth:
@@ -22,9 +23,11 @@ if str(UI_ROOT) not in sys.path:
     sys.path.insert(0, str(UI_ROOT))
 
 from models.note import Note
+from models.song import Song
 from ui.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 from ui.cursor import Cursor
 from ui.piano_roll import PianoRoll
+from ui.song_ribbon import SongRibbon
 
 
 pygame.init()
@@ -126,3 +129,50 @@ class TestPianoRoll(unittest.TestCase):
                 Cursor().holding_right = False
 
         self.assertEqual(piano_roll.track.note_list, [])
+
+    def test_song_ribbon_restart_plays_shared_piano_roll_track(self):
+        Song.reset_instance()
+        try:
+            screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            song = Song(bpm=100)
+            piano_roll = PianoRoll(
+                screen,
+                pygame.Rect(64, 64, SCREEN_WIDTH - 64, SCREEN_HEIGHT - 64),
+                song=song,
+            )
+            engine = unittest.mock.Mock()
+            song_ribbon = SongRibbon(screen, 64, song=song, engine=engine)
+            note = Note(pitch=60, start=0, duration=4, velocity=96)
+
+            piano_roll.add_note(note)
+            song_ribbon.tempo.value = 137
+            song_ribbon.restart()
+
+            self.assertIs(piano_roll.track, song.track_list[0])
+            self.assertEqual(song.track_list[0].note_list, [note])
+            self.assertEqual(song.bpm, 137)
+            engine.play_midi_async.assert_called_once()
+
+            midi_file = engine.play_midi_async.call_args.args[0]
+            self.assertIsInstance(midi_file, MidiFile)
+
+            tempo_messages = [
+                message for message in midi_file.tracks[0]
+                if message.is_meta and message.type == "set_tempo"
+            ]
+            self.assertEqual(len(tempo_messages), 1)
+            self.assertEqual(tempo_messages[0].tempo, bpm2tempo(137))
+
+            note_messages = [
+                message for message in midi_file.tracks[0]
+                if not message.is_meta
+            ]
+            self.assertEqual(
+                [message.type for message in note_messages],
+                ["program_change", "note_on", "note_off"],
+            )
+            self.assertEqual(note_messages[1].note, 60)
+            self.assertEqual(note_messages[1].velocity, 96)
+            self.assertEqual(note_messages[2].time, midi_file.ticks_per_beat)
+        finally:
+            Song.reset_instance()

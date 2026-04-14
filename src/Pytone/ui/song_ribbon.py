@@ -5,6 +5,8 @@ from typing import List
 from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 from ui.cursor import Cursor
 from ui.piano_roll import BEAT_WIDTH, MAX_SONG_DURATION
+from models.song import Song
+from models.audioEngine import Engine
 
 BUMPER_COLOR: tuple[int, int, int] = (68, 68, 68)
 DARK_ACCENT: tuple[int, int, int] = (34, 34, 34)
@@ -63,9 +65,15 @@ class SpinBox:
                     self.decrement()
 
 class SongRibbon:
-    def __init__(self, screen, size: int) -> None:
+    def __init__(self,
+                 screen,
+                 size: int,
+                 song: Song | None = None,
+                 engine: Engine | None = None) -> None:
         self.screen: pygame.Surface = screen
         self.size: int = size
+        self.song: Song = Song() if song is None else song
+        self.engine: Engine = Engine() if engine is None else engine
         self.FONT = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
         self.play_button: pygame.Rect = pygame.Rect(128, 8, 32, 32)
         self.stop_button: pygame.Rect = pygame.Rect(128 + 32 + 8, 8, 32, 32)
@@ -74,7 +82,7 @@ class SongRibbon:
         self.current_beat = 0
         self.playing: bool = False
         self.scrubbing: bool = False
-        self.tempo = SpinBox(screen, (552, 8), 120, 1, 999)
+        self.tempo = SpinBox(screen, (552, 8), self.song.bpm, 1, 999)
         # self.time_signature_numerator = SpinBox(screen, (476, 8), 4, 1, 64)
         # self.time_signature_denomerator = SpinBox(screen, (568, 8), 4, 1, 64, lambda x: x * 2, lambda x: x // 2)
 
@@ -112,14 +120,23 @@ class SongRibbon:
 
     def toggle_playback(self):
         self.playing = not self.playing
+
+        # TEMPORARY CHANGES !
+        if self.playing:
+            self.restart()
+        else:
+            self.stop()
     
     def stop(self):
         self.playing = False
         self.current_beat = 0
+        self.engine.stop()
 
     def restart(self):
+        self.song.bpm = self.tempo.value
         self.playing = True
         self.current_beat = 0
+        self.engine.play_midi_async(self.song.create_midifile(path=None))
 
     def process(self, event):
         self.tempo.process(event)

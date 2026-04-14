@@ -2,7 +2,7 @@
 import os
 from collections import defaultdict
 from typing import Any, List, Tuple, Optional
-from mido import Message, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
+from mido import Message, MetaMessage, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
 from .track import Track
 from .instruments import (
     GENERAL_MIDI_INSTRUMENT_NAMES,
@@ -15,6 +15,7 @@ from .note import Note
 
 
 class Song:
+    _instance: Optional["Song"] = None
     MAX_TRACKS = 4
     STEPS_PER_BEAT = Note.STEPS_PER_BEAT
     GENERAL_MIDI_INSTRUMENTS = GENERAL_MIDI_INSTRUMENTS
@@ -29,17 +30,33 @@ class Song:
                 beginning and keep playing after end is reached
 
     """
+    def __new__(cls, *args, **kwargs) -> "Song":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self,
                  bpm: int = 100,
                  length: int = 16,
                  signature: Tuple[int, int] = (4, 4),
                  loop: bool = True
                  ) -> None:
+        if getattr(self, "_initialized", False):
+            return
         self.bpm = bpm
         self.length = length
         self.signature = signature
         self.track_list: list[Track] = []
         self.loop = loop
+        self._initialized = True
+
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reset the singleton instance.
+
+        Primarily intended for tests so each test can start with a clean Song.
+        """
+        cls._instance = None
 
     @classmethod
     def get_max_tracks(cls) -> int:
@@ -95,8 +112,7 @@ class Song:
 
         Args:
             path (Optional[str]): Destination path for the MIDI file. When
-                omitted, defaults to ``song.mid`` in the current working
-                directory.
+                omitted, a Midifile object is returned instead
 
         Returns:
             str | Midifile: Absolute path to the saved MidiFile if path is
@@ -109,6 +125,24 @@ class Song:
             mid_track = MidiTrack()
             instrument = track.instrument
             channel = track.channel
+
+            if not mid.tracks:
+                numerator, denominator = self.signature
+                mid_track.append(
+                    MetaMessage(
+                        "set_tempo",
+                        tempo=bpm2tempo(self.bpm),
+                        time=0,
+                    )
+                )
+                mid_track.append(
+                    MetaMessage(
+                        "time_signature",
+                        numerator=numerator,
+                        denominator=denominator,
+                        time=0,
+                    )
+                )
 
             mid_track.append(
                 Message(
@@ -158,9 +192,6 @@ class Song:
     #     returns path to file
     #     """
     #     pass
-
-    def load_from_midi(self, path: str) -> None:
-        pass
 
     # def notes_to_midi(self) -> None:
     #     """Converts the list of notes into list of midi messages

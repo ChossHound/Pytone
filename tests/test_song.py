@@ -1,6 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
@@ -15,6 +16,18 @@ song_module = load_model_module("song")
 Note = note_module.Note
 Track = track_module.Track
 Song = song_module.Song
+
+
+@pytest.fixture(autouse=True)
+def reset_song_singleton():
+    Song.reset_instance()
+    yield
+    Song.reset_instance()
+
+
+def fresh_song(*args, **kwargs):
+    Song.reset_instance()
+    return Song(*args, **kwargs)
 
 
 def test_song_general_midi_lookup_maps_names_and_codes():
@@ -200,23 +213,39 @@ def test_create_midifile_uses_updated_track_instrument_value(tmp_path):
     assert messages[0].program == Song.instrument_code("Voice Oohs")
 
 
-def test_song_instances_are_independent():
+def test_song_is_a_singleton_and_preserves_initial_configuration():
     first_song = Song(bpm=120, length=8, signature=(3, 4), loop=False)
     second_song = Song()
 
     first_song.add_track(Track(channel=1, instrument=5, note_list=[]))
 
-    assert first_song is not second_song
+    assert first_song is second_song
     assert first_song.bpm == 120
     assert first_song.length == 8
     assert first_song.signature == (3, 4)
     assert first_song.loop is False
     assert len(first_song.track_list) == 1
-    assert second_song.bpm == 100
-    assert second_song.length == 16
-    assert second_song.signature == (4, 4)
-    assert second_song.loop is True
-    assert second_song.track_list == []
+    assert second_song.bpm == 120
+    assert second_song.length == 8
+    assert second_song.signature == (3, 4)
+    assert second_song.loop is False
+    assert second_song.track_list == first_song.track_list
+
+
+def test_song_reset_instance_creates_a_fresh_singleton():
+    first_song = Song(bpm=120, length=8, signature=(3, 4), loop=False)
+    first_song.add_track(Track(channel=1, instrument=5, note_list=[]))
+
+    Song.reset_instance()
+
+    replacement_song = Song()
+
+    assert replacement_song is not first_song
+    assert replacement_song.bpm == 100
+    assert replacement_song.length == 16
+    assert replacement_song.signature == (4, 4)
+    assert replacement_song.loop is True
+    assert replacement_song.track_list == []
 
 
 def test_song_add_track_auto_assigns_distinct_channels_when_not_provided():
@@ -245,7 +274,7 @@ def test_song_add_track_preserves_explicit_channel_and_skips_it_for_auto_assign(
 
 @given(st.lists(track_strategy(), max_size=Song.MAX_TRACKS))
 def test_song_add_track_preserves_order_until_capacity(tracks):
-    song = Song()
+    song = fresh_song()
 
     for track in tracks:
         song.add_track(track)
@@ -257,7 +286,7 @@ def test_song_add_track_preserves_order_until_capacity(tracks):
 @given(st.lists(track_strategy(), min_size=Song.MAX_TRACKS + 1,
                 max_size=Song.MAX_TRACKS + 3))
 def test_song_rejects_more_tracks_than_capacity(tracks):
-    song = Song()
+    song = fresh_song()
 
     for track in tracks[:Song.MAX_TRACKS]:
         song.add_track(track)
@@ -275,7 +304,7 @@ def test_song_rejects_more_tracks_than_capacity(tracks):
     channel=st.integers(min_value=0, max_value=15),
 )
 def test_note_to_message_preserves_note_values(note, channel):
-    song = Song()
+    song = fresh_song()
 
     timed_messages = song.note_to_message(note, channel)
 
@@ -298,7 +327,7 @@ def test_note_to_message_preserves_note_values(note, channel):
 
 @given(tracks=st.lists(track_strategy(), max_size=Song.MAX_TRACKS))
 def test_create_midifile_emits_expected_track_and_message_counts(tracks):
-    song = Song()
+    song = fresh_song()
     for track in tracks:
         song.add_track(track)
 
@@ -477,7 +506,7 @@ def test_build_tracks_from_midifile_round_trips_generated_midi_data(
     for track in tracks:
         midi_file.tracks.append(midi_track_from_track(track))
 
-    song = Song(bpm=100, length=16, signature=(4, 4))
+    song = fresh_song(bpm=100, length=16, signature=(4, 4))
     song.build_tracks_from_midifile(midi_file)
 
     assert song.bpm == bpm

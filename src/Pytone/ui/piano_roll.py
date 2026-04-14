@@ -6,6 +6,7 @@ from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 from ui.cursor import Cursor
 from models.audioEngine import Engine
 from models.track import Track
+from models.song import Song
 
 BPM: int = 120
 MAX_SONG_DURATION: int = 16 / (BPM / 60) * 60 * 3  # beats = beatspermeasure / beatspersecond * secondsperminute * minutes
@@ -30,9 +31,15 @@ PLAY_HEAD_COLOR: tuple[int, int, int] = (255, 255, 153)
 
 
 class PianoRoll:
-    def __init__(self, screen, dimension: pygame.Rect):
+    def __init__(self,
+                 screen,
+                 dimension: pygame.Rect,
+                 song: Song | None = None,
+                 track_index: int = 0):
         self.screen: pygame.Surface = screen
-        self.track: Track = Track(instrument=0)
+        self.song: Song | None = song
+        self.track_index: int = track_index
+        self.track: Track = self._resolve_track()
         self.ghost_note: Note | None = None
         self.cropping_note: bool = False
         self.current_note = Note(0, 0, duration=MIN_BEAT_DURATION)
@@ -43,6 +50,15 @@ class PianoRoll:
         self.dimension.height = NUM_OCTAVES*STEP_HEIGHT*KEYS_PER_OCTAVE
         self.dimension.y = -STEP_HEIGHT*12*4
         self.FONT = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
+
+    def _resolve_track(self) -> Track:
+        if self.song is None:
+            return Track(instrument=0)
+
+        while len(self.song.track_list) <= self.track_index:
+            self.song.add_track(Track(instrument=0))
+
+        return self.song.track_list[self.track_index]
 
     def add_note(self, note: Note):
         self.track.add_note(note)

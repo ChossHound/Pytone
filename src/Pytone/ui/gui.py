@@ -2,17 +2,25 @@ import pygame
 from ui.piano_roll import PianoRoll
 from ui.song_ribbon import SongRibbon
 from models.note import Note
+from models.song import Song
+from models.audioEngine import Engine
 from ui.cursor import Cursor
 from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 
-def Run() -> None:
+def Run(song: Song | None = None, engine: Engine | None = None) -> None:
     pygame.init()
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Pytone")
+    song = Song() if song is None else song
+    engine = Engine() if engine is None else engine
     Cursor().init(screen, (255, 255, 255), 2)
-    pianoroll: PianoRoll = PianoRoll(screen, pygame.Rect(64, 64, SCREEN_WIDTH-64, SCREEN_HEIGHT))
-    songribbon: SongRibbon = SongRibbon(screen, 64)
+    pianoroll: PianoRoll = PianoRoll(
+        screen,
+        pygame.Rect(64, 64, SCREEN_WIDTH-64, SCREEN_HEIGHT),
+        song=song,
+    )
+    songribbon: SongRibbon = SongRibbon(screen, 64, song=song, engine=engine)
 
     while True:
         clock.tick(60)
