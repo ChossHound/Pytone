@@ -100,8 +100,8 @@ class PianoRoll:
         if self.ghost_note is not None:
             if self.ghost_note.duration > 0:
                 self.add_note(self.ghost_note)
-                self.ghost_note = None
-                self.cropping_note = False
+            self.ghost_note = None
+            self.cropping_note = False
 
     def get_rect(self, note: Note) -> pygame.Rect:
         # Convert note properties to a pygame.Rect
