@@ -140,8 +140,8 @@ class PianoRoll:
             if self.ghost_note is None and Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)) and Cursor().is_holding_left():
                 pitch: int = self.pitch_from_position(self.apply_dimension(Cursor().get_position())[1])
                 if self.current_note.pitch != pitch:
-                    Engine().send_note_on(0, pitch, 100)
-                    Engine().send_note_off(0, self.current_note.pitch)
+                    Engine().send_note_on(self.track.channel, pitch, 100)
+                    Engine().send_note_off(self.track.channel, self.current_note.pitch)
                     self.current_note.pitch = pitch
             # if we are deleting notes: delete this one too
             if Cursor().is_holding_right():
@@ -176,7 +176,7 @@ class PianoRoll:
                     #play note on piano
                     pitch: int = self.pitch_from_position(self.apply_dimension(Cursor().get_position())[1])
                     self.current_note.pitch = pitch
-                    Engine().send_note_on(0, pitch, 100)
+                    Engine().send_note_on(self.track.channel, pitch, 100)
 
             if event.button == 3: #right click
                 n: Note = self.get_note_at_cursor()
@@ -186,7 +186,7 @@ class PianoRoll:
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # Left click
                 self.end_ghost_note()
-                Engine().send_note_off(0, self.current_note.pitch)
+                Engine().send_note_off(self.track.channel, self.current_note.pitch)
 
         elif event.type == pygame.MOUSEWHEEL:
             self.dimension.y += event.y * PIXEL_SCALE * 4
