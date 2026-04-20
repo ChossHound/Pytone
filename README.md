@@ -10,7 +10,8 @@ in the terminal run the following command to start the venv: `source venv/bin/ac
 ## FluidSynth setup
 
 Pytone installs the Python package `pyfluidsynth` into the virtual environment,
-but FluidSynth also requires a native system library and a SoundFont file.
+downloads `FluidR3_GM.sf2` into `src/Pytone/assets/soundfonts/`, but FluidSynth
+still requires a native system library on the host machine.
 
 The virtual environment setup will install the Python binding automatically:
 
@@ -23,8 +24,9 @@ You must still install FluidSynth on the host machine:
 - Windows: install a FluidSynth binary/package and make sure the library is on
   your PATH
 
-You will also need a SoundFont such as `FluidR3_GM.sf2` and a way to point the
-audio engine at that file.
+The default audio engine path already points at:
+
+`src/Pytone/assets/soundfonts/FluidR3_GM.sf2`
 
 <!-- 
 run the following commands:
