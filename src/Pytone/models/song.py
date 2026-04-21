@@ -3,6 +3,14 @@ import os
 from collections import defaultdict
 from typing import Any, List, Tuple, Optional
 from mido import Message, MetaMessage, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
+
+try:
+    import tkinter as tk
+    from tkinter import filedialog
+except ImportError:
+    tk = None
+    filedialog = None
+
 from .track import Track
 from .instruments import (
     GENERAL_MIDI_INSTRUMENT_NAMES,
@@ -181,10 +189,165 @@ class Song:
             output_path = os.path.abspath(path)
             mid.save(output_path)
         return output_path
+    
+    def create_midifile_from(self, starting_beat: int = 0) -> MidiFile:
+        """creates a midifile from the current track list starting
+            at starting_beat
 
-    # def export_to_midi(self, path: str) -> str:
-    #     """Export all notes in `track_list` to a type-1 MIDI file."""
-    #     return self.create_midifile(path)
+
+        Args:
+            starting_beat (int, optional): the 16th note possition in the song
+            to start from. Defaults to 0.
+
+        Raises:
+            RuntimeError: _description_
+            RuntimeError: _description_
+            ValueError: _description_
+            TypeError: _description_
+
+        Returns:
+            MidiFile: a midifile of the sub-song starting from
+                position starting_beat
+        """
+        mid = MidiFile(type=1)
+        new_track_list = []
+        
+        for track in self.track_list:
+            new_track = Track(channel=track.channel,
+                              instrument=track.instrument,
+                              note_list=[note for note in track if note.start >= starting_beat])
+
+            new_track_list.append(new_track)
+
+        for track in new_track_list:
+            mid_track = MidiTrack()
+            instrument = track.instrument
+            channel = track.channel
+
+            if not mid.tracks:
+                numerator, denominator = self.signature
+                mid_track.append(
+                    MetaMessage(
+                        "set_tempo",
+                        tempo=bpm2tempo(self.bpm),
+                        time=0,
+                    )
+                )
+                mid_track.append(
+                    MetaMessage(
+                        "time_signature",
+                        numerator=numerator,
+                        denominator=denominator,
+                        time=0,
+                    )
+                )
+
+            mid_track.append(
+                Message(
+                    "program_change",
+                    program=instrument,
+                    channel=channel,
+                    time=0,
+                )
+            )
+
+            timed_messages: List[Tuple[int, Message]] = []
+            for note in getattr(track, "_note_list", []):
+                timed_messages.extend(self.note_to_message(note, channel))
+
+            timed_messages.sort(
+                key=lambda item: (
+                    item[0],
+                    0 if item[1].type == "note_off" else 1,
+                )
+            )
+
+            previous_tick = 0
+            for absolute_time, message in timed_messages:
+                absolute_tick = self.steps_to_ticks(
+                    absolute_time,
+                    mid.ticks_per_beat,
+                )
+                message.time = max(0, absolute_tick - previous_tick)
+                mid_track.append(message)
+                previous_tick = absolute_tick
+
+            mid.tracks.append(mid_track)
+
+        return mid
+
+    @staticmethod
+    def _normalize_midifile_path(path: str) -> str:
+        """Ensure exported MIDI files use a MIDI extension."""
+        if path.lower().endswith((".mid", ".midi")):
+            return path
+        return f"{path}.mid"
+
+    def choose_midifile_path(
+        self,
+        initial_filename: str = "song.mid",
+        initial_dir: Optional[str] = None,
+        title: str = "Save MIDI File",
+    ) -> Optional[str]:
+        """Open a native save dialog and return the selected MIDI path.
+
+        Returns ``None`` when the user cancels the dialog.
+        """
+        if tk is None or filedialog is None:
+            raise RuntimeError("tkinter is not available for MIDI export")
+
+        root = None
+        try:
+            root = tk.Tk()
+            root.withdraw()
+            selected_path = filedialog.asksaveasfilename(
+                title=title,
+                defaultextension=".mid",
+                filetypes=[
+                    ("MIDI files", "*.mid *.midi"),
+                    ("All files", "*.*"),
+                ],
+                initialfile=initial_filename,
+                initialdir=initial_dir or os.getcwd(),
+            )
+        except tk.TclError as exc:
+            raise RuntimeError(
+                "Could not open the MIDI save dialog. "
+                "Check that a desktop display is available."
+            ) from exc
+        finally:
+            if root is not None:
+                root.destroy()
+
+        if not selected_path:
+            return None
+
+        normalized_path = self._normalize_midifile_path(selected_path)
+        return os.path.abspath(normalized_path)
+
+    def export_to_midi(
+        self,
+        path: Optional[str] = None,
+        initial_filename: str = "song.mid",
+        initial_dir: Optional[str] = None,
+    ) -> Optional[str]:
+        """Export the song to a MIDI file.
+
+        When ``path`` is omitted, a native save dialog is shown so the user
+        can choose where to save the file. Returns ``None`` if the dialog is
+        cancelled.
+        """
+        destination = path
+        if destination is None:
+            destination = self.choose_midifile_path(
+                initial_filename=initial_filename,
+                initial_dir=initial_dir,
+            )
+            if destination is None:
+                return None
+
+        destination = self._normalize_midifile_path(destination)
+        return self.create_midifile(destination)
 
     # def export_to_wav(self, midi_path: str) -> str:
     #     """exports project to a .wav file
