@@ -1,82 +1,39 @@
 import pygame
-import pygame.freetype 
-import math
-from typing import List
-from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
+import pygame.freetype
+from ui.widget import Widget
+from ui.constants import SCREEN_WIDTH, PIXEL_SCALE, BUMPER_COLOR, DARK_ACCENT, BUTTON_COLOR, TEXT_COLOR
 from ui.cursor import Cursor
-from ui.piano_roll import BEAT_WIDTH, MAX_SONG_DURATION
+from ui.piano_roll import MAX_SONG_DURATION
+from ui.spin_box import SpinBox
+from ui.button import Button
+from ui.text_button import TextButton
 
-BUMPER_COLOR: tuple[int, int, int] = (68, 68, 68)
-DARK_ACCENT: tuple[int, int, int] = (34, 34, 34)
-BUTTON_COLOR: tuple[int, int, int] = (102, 119, 170)
-TEXT_COLOR: tuple[int, int, int] = (255, 255, 255)
+class SongRibbon(Widget):
+    """A class for managing the playback of the song visually and interactively.
+    Allows the user to play, pause, stop, or restart the song.
 
-class SpinBox:
-    def __init__(self, screen, position: tuple[int, int], value, _min, _max, get_next = lambda x: x + 1, get_previous = lambda x: x - 1):
-        self.screen: pygame.Surface = screen
-        self.FONT = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
-        self.position = position
-        self.value = value
-        self.min = _min
-        self.max = _max
-        self.get_next = get_next
-        self.width = 16 * (int(math.log10(_max)) + 1) + 16
-        self.get_previous = get_previous
+    Properties:
+     - size: how tall the song ribbon should be
+     - play_button: a ui.text_button object that allows the user to toggle play back
+     - stop_button: a ui.button object that allows the user to stop play back
+     - progress_bar: a pygame.Rect that is used for drawing how far into the song the play head is.
+     - song_length: an int that determines how long the song can go.
+     - current_beat: an int based on where in the song the play head is.
+     - ? Come back after merge
 
-        x, y = self.position
-        self.plus_rect = pygame.Rect(x + self.width + 4, y, 20, 16)
-        self.minus_rect = pygame.Rect(x + self.width + 4, y + 20, 20, 12)
-
-    def increment(self) -> None:
-        self.value = self.get_next(self.value)
-        if self.value > self.max:
-            self.value = self.max
-
-    def decrement(self) -> None:
-        self.value = self.get_previous(self.value)
-        if self.value < self.min:
-            self.value = self.min
-
-    def draw(self):
-        x, y = self.position
-
-        # text
-        pygame.draw.rect(self.screen, DARK_ACCENT, pygame.Rect(x, y, self.width, 32))
-        self.FONT.render_to(self.screen, (x + 8, y + 4), str(self.value), TEXT_COLOR)
-
-        # buttons
-        pygame.draw.rect(self.screen, BUTTON_COLOR, self.plus_rect)
-        x, y, w, h = self.plus_rect
-        pygame.draw.rect(self.screen, TEXT_COLOR, (x + 8, y, 4, 12))
-        pygame.draw.rect(self.screen, TEXT_COLOR, (x + 4, y + 4, 12, 4))
-
-        pygame.draw.rect(self.screen, BUTTON_COLOR, self.minus_rect)
-        x, y, w, h = self.minus_rect
-        pygame.draw.rect(self.screen, TEXT_COLOR, (x + 4, y + 4, 12, 4))
-
-    def process(self, event) -> None:
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
-                if Cursor().is_overlapping(self.plus_rect):
-                    self.increment()
-                elif Cursor().is_overlapping (self.minus_rect):
-                    self.decrement()
-
-class SongRibbon:
-    def __init__(self, screen, size: int) -> None:
-        self.screen: pygame.Surface = screen
+    """
+    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, size: int) -> None:
+        super().__init__(screen)
+        self.font: pygame.freetype.Font = font
         self.size: int = size
-        self.FONT = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
-        self.play_button: pygame.Rect = pygame.Rect(128, 8, 32, 32)
-        self.stop_button: pygame.Rect = pygame.Rect(128 + 32 + 8, 8, 32, 32)
-        self.progress_bar: pygame.Rect = pygame.Rect(128, 48, 512, 8)
-        self.song_length = MAX_SONG_DURATION
-        self.current_beat = 0
+        self.play_button: TextButton = TextButton(screen, font, pygame.Rect(32*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), ">", self.toggle_playback)
+        self.stop_button: Button = Button(screen, pygame.Rect(42*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), self.stop)
+        self.progress_bar: pygame.Rect = pygame.Rect(32*PIXEL_SCALE, 12*PIXEL_SCALE, 128*PIXEL_SCALE, 2*PIXEL_SCALE)
+        self.song_length: int = MAX_SONG_DURATION
+        self.current_beat: int = 0
         self.playing: bool = False
         self.scrubbing: bool = False
-        self.tempo = SpinBox(screen, (552, 8), 120, 1, 999)
-        # self.time_signature_numerator = SpinBox(screen, (476, 8), 4, 1, 64)
-        # self.time_signature_denomerator = SpinBox(screen, (568, 8), 4, 1, 64, lambda x: x * 2, lambda x: x // 2)
+        self.tempo = SpinBox(screen, font, (552, 8), 120, 1, 999)
 
     def draw(self):
         if self.playing and self.current_beat < self.song_length:
@@ -85,14 +42,13 @@ class SongRibbon:
         pygame.draw.rect(self.screen, BUMPER_COLOR, (0, 0, SCREEN_WIDTH, self.size))
 
         # draw play button
-        pygame.draw.rect(self.screen, BUTTON_COLOR, self.play_button)
-        button_text: str = "||" if self.playing else ">"
-        self.FONT.render_to(self.screen, (self.play_button.x + 8, self.play_button.y + 4), button_text, TEXT_COLOR)
+        self.play_button.text = "||" if self.playing else ">"
+        self.play_button.draw()
 
         # draw stop button
-        pygame.draw.rect(self.screen, BUTTON_COLOR, self.stop_button)
-        spacing: int = 8
-        pygame.draw.rect(self.screen, TEXT_COLOR, pygame.Rect(self.stop_button.x + spacing, self.stop_button.y + spacing, self.stop_button.width - spacing*2, self.stop_button.height - spacing*2))
+        self.stop_button.draw()
+        spacing: int = 2*PIXEL_SCALE
+        pygame.draw.rect(self.screen, TEXT_COLOR, pygame.Rect(self.stop_button.rect.x + spacing, self.stop_button.rect.y + spacing, self.stop_button.rect.width - spacing*2, self.stop_button.rect.height - spacing*2))
 
         # draw progress bar
         pygame.draw.rect(self.screen, DARK_ACCENT, self.progress_bar)
@@ -112,7 +68,7 @@ class SongRibbon:
 
     def toggle_playback(self):
         self.playing = not self.playing
-    
+
     def stop(self):
         self.playing = False
         self.current_beat = 0
@@ -123,16 +79,14 @@ class SongRibbon:
 
     def process(self, event):
         self.tempo.process(event)
+        self.play_button.process(event)
+        self.stop_button.process(event)
         # self.time_signature_numerator.process(event)
         # self.time_signature_denomerator.process(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
                 if Cursor().is_overlapping((0, 0, SCREEN_WIDTH, self.size)):
-                    if Cursor().is_overlapping(self.play_button):
-                        self.toggle_playback()
-                    if Cursor().is_overlapping(self.stop_button):
-                        self.stop()
                     if Cursor().is_overlapping(self.progress_bar):
                         x, y = Cursor().get_position()
                         progress: int = x - self.progress_bar.x
@@ -154,5 +108,3 @@ class SongRibbon:
                     self.restart()
                 else:
                     self.toggle_playback()
-
-                    

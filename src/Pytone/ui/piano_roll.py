@@ -2,6 +2,7 @@ import pygame
 import pygame.freetype 
 from models.note import Note
 from typing import List
+from ui.widget import Widget
 from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 from ui.cursor import Cursor
 from models.audioEngine import Engine
@@ -28,20 +29,34 @@ KEY_COLORS: list[tuple[int, int, int]] = [
 MEASURE_COLOR: tuple[int, int, int] = (24, 34, 36)
 PLAY_HEAD_COLOR: tuple[int, int, int] = (255, 255, 153)
 
-class PianoRoll:
-    def __init__(self, screen, dimension: pygame.Rect):
-        self.screen: pygame.Surface = screen
+
+class PianoRoll(Widget):
+    """Class for drawing and managing notes.
+    Allows the user to draw, move, and crop notes on the piano roll using the cursor.
+    Also creates and handles the piano on the right side of the screen for playing notes without drawing them.
+    Notes are maintained by models.track.
+
+    Properties:
+     - track: The models.track object that keeps track notes.
+     - ghost_note: A note that is used for displaying where a not is going to be added or where a note will be moved to.
+                   Set to None when not in use.
+     - cropping_note: a boolean for determining if the user is moving, or cropping an existing note. 
+                      If this is true, the ghost_note's duration (instead of its position) will be set based on the cursor position.
+     - current_pitch: an int (or None) that keeps track of the pitch of the currently playing note. This information is used to send on and off messages to the engine to preview notes.
+     - self.piano_size: an int that determines how large the piano should be on the left side of the screen.
+     - self.ribbon_size: an int that determines how large the song_ribbon is on the screen. Because song_ribbon is handled by ui.song_rubbon, this is used just to determine how far the piano roll can scroll without overlapping.
+     - dimension: a pygame.rect that holds the position of notes. .x and .y are offset by the user panning around the piano roll.
+    """
+    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, piano_size: int, ribbon_size: int):
+        super().__init__(screen)
+        self.font: pygame.freetype.Font = font
         self.track: Track = Track(instrument=0)
         self.ghost_note: Note | None = None
         self.cropping_note: bool = False
-        self.current_note = Note(0, 0, duration=MIN_BEAT_DURATION)
-        self.dimension = dimension
-        self.piano_size = dimension.x
-        self.ribbon_size = dimension.y
-        self.dimension.width = MAX_SONG_DURATION*BEAT_WIDTH
-        self.dimension.height = NUM_OCTAVES*STEP_HEIGHT*KEYS_PER_OCTAVE
-        self.dimension.y = -STEP_HEIGHT*12*4
-        self.FONT = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
+        self.current_pitch: int | None = None
+        self.piano_size: int = piano_size
+        self.ribbon_size: int = ribbon_size
+        self.dimension: pygame.Rect = pygame.Rect(self.piano_size, -STEP_HEIGHT*12*PIXEL_SCALE, MAX_SONG_DURATION*BEAT_WIDTH, NUM_OCTAVES*STEP_HEIGHT*KEYS_PER_OCTAVE)
 
     def add_note(self, note: Note):
         self.track.add_note(note)
@@ -139,10 +154,11 @@ class PianoRoll:
             # if we are not drawing a note and over the piano: make a sound
             if self.ghost_note is None and Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)) and Cursor().is_holding_left():
                 pitch: int = self.pitch_from_position(self.apply_dimension(Cursor().get_position())[1])
-                if self.current_note.pitch != pitch:
+                if self.current_pitch != pitch or self.current_pitch is None:
+                    if self.current_pitch is not None:
+                        Engine().send_note_off(self.track.channel, self.current_pitch)
+                    self.current_pitch = pitch
                     Engine().send_note_on(self.track.channel, pitch, 100)
-                    Engine().send_note_off(self.track.channel, self.current_note.pitch)
-                    self.current_note.pitch = pitch
             # if we are deleting notes: delete this one too
             if Cursor().is_holding_right():
                 n: Note = self.get_note_at_cursor()
@@ -175,7 +191,9 @@ class PianoRoll:
                 elif Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)):
                     #play note on piano
                     pitch: int = self.pitch_from_position(self.apply_dimension(Cursor().get_position())[1])
-                    self.current_note.pitch = pitch
+                    if self.current_pitch != pitch or self.current_pitch is not None:
+                        Engine().send_note_off(self.track.channel, self.current_pitch)
+                    self.current_pitch = pitch
                     Engine().send_note_on(self.track.channel, pitch, 100)
 
             if event.button == 3: #right click
@@ -186,7 +204,9 @@ class PianoRoll:
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # Left click
                 self.end_ghost_note()
-                Engine().send_note_off(self.track.channel, self.current_note.pitch)
+                if self.current_pitch is not None:
+                    Engine().send_note_off(self.track.channel, self.current_pitch)
+                    self.current_pitch = None
 
         elif event.type == pygame.MOUSEWHEEL:
             self.dimension.y += event.y * PIXEL_SCALE * 4
@@ -216,7 +236,7 @@ class PianoRoll:
 
         # draw octave numbers
         for i in range(1, NUM_OCTAVES + 1, 1):
-            self.FONT.render_to(self.screen, (self.dimension.x - 5*PIXEL_SCALE, i*STEP_HEIGHT*KEYS_PER_OCTAVE + self.dimension.y - 7*PIXEL_SCALE), str(NUM_OCTAVES + 1 - i), ACCIDENTAL_KEY_COLOR)
+            self.font.render_to(self.screen, (self.dimension.x - 5*PIXEL_SCALE, i*STEP_HEIGHT*KEYS_PER_OCTAVE + self.dimension.y - 7*PIXEL_SCALE), str(NUM_OCTAVES + 1 - i), ACCIDENTAL_KEY_COLOR)
 
         # draw notes
         for note in self.track.note_list:

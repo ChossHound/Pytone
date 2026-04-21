@@ -2,7 +2,7 @@ from models.song import Song
 from models.track import Track
 from models.note import Note
 from models.audioEngine import Engine
-from ui import gui
+from ui.gui import GUI
 
 def main() -> None:
     """import gaurd
@@ -54,7 +54,7 @@ def pyramid_song():
     engine = Engine()
     engine.start()
     engine.play_midi_once(mid)
-    gui.Run()
+    GUI().run()
     # engine.play_midi(mid, loop=True)
 
 if __name__ == "__main__":
