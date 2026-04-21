@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -211,6 +212,93 @@ def test_create_midifile_uses_updated_track_instrument_value(tmp_path):
     assert messages[0].type == "program_change"
     assert messages[0].channel == 3
     assert messages[0].program == Song.instrument_code("Voice Oohs")
+
+
+def test_export_to_midi_uses_dialog_selection_and_appends_mid_extension(
+    monkeypatch,
+):
+    song = Song()
+    dialog_calls = {}
+    create_calls = []
+
+    class FakeRoot:
+        def __init__(self):
+            self.withdrawn = False
+            self.destroyed = False
+
+        def withdraw(self):
+            self.withdrawn = True
+
+        def destroy(self):
+            self.destroyed = True
+
+    fake_root = FakeRoot()
+
+    class FakeTkModule:
+        TclError = RuntimeError
+
+        @staticmethod
+        def Tk():
+            return fake_root
+
+    class FakeFileDialog:
+        @staticmethod
+        def asksaveasfilename(**kwargs):
+            dialog_calls.update(kwargs)
+            return "exports/demo_song"
+
+    def fake_create_midifile(path):
+        create_calls.append(path)
+        return path
+
+    monkeypatch.setattr(song_module, "tk", FakeTkModule)
+    monkeypatch.setattr(song_module, "filedialog", FakeFileDialog)
+    monkeypatch.setattr(song, "create_midifile", fake_create_midifile)
+
+    output_path = song.export_to_midi(
+        initial_filename="demo_song.mid",
+        initial_dir="exports",
+    )
+
+    assert fake_root.withdrawn is True
+    assert fake_root.destroyed is True
+    assert dialog_calls["defaultextension"] == ".mid"
+    assert dialog_calls["initialfile"] == "demo_song.mid"
+    assert dialog_calls["initialdir"] == "exports"
+    assert output_path == os.path.abspath("exports/demo_song.mid")
+    assert create_calls == [os.path.abspath("exports/demo_song.mid")]
+
+
+def test_export_to_midi_returns_none_when_dialog_is_cancelled(monkeypatch):
+    song = Song()
+
+    class FakeRoot:
+        def withdraw(self):
+            return None
+
+        def destroy(self):
+            return None
+
+    class FakeTkModule:
+        TclError = RuntimeError
+
+        @staticmethod
+        def Tk():
+            return FakeRoot()
+
+    class FakeFileDialog:
+        @staticmethod
+        def asksaveasfilename(**kwargs):
+            return ""
+
+    def unexpected_create_midifile(path):
+        raise AssertionError("create_midifile should not be called")
+
+    monkeypatch.setattr(song_module, "tk", FakeTkModule)
+    monkeypatch.setattr(song_module, "filedialog", FakeFileDialog)
+    monkeypatch.setattr(song, "create_midifile", unexpected_create_midifile)
+
+    assert song.export_to_midi() is None
 
 
 def test_song_is_a_singleton_and_preserves_initial_configuration():
