@@ -1,12 +1,13 @@
 import pygame
 import pygame.freetype 
 from models.note import Note
-from typing import List
+from typing import List, Callable
 from ui.widget import Widget
 from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
 from ui.cursor import Cursor
 from models.audioEngine import Engine
 from models.track import Track
+from models.song import Song
 
 BPM: int = 120
 MAX_SONG_DURATION: int = 16 / (BPM / 60) * 60 * 3  # beats = beatspermeasure / beatspersecond * secondsperminute * minutes
@@ -47,16 +48,28 @@ class PianoRoll(Widget):
      - self.ribbon_size: an int that determines how large the song_ribbon is on the screen. Because song_ribbon is handled by ui.song_rubbon, this is used just to determine how far the piano roll can scroll without overlapping.
      - dimension: a pygame.rect that holds the position of notes. .x and .y are offset by the user panning around the piano roll.
     """
-    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, piano_size: int, ribbon_size: int):
+    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, piano_size: int, ribbon_size: int, get_current_beat: Callable[[None], int], song: Song, track_index: int):
         super().__init__(screen)
         self.font: pygame.freetype.Font = font
-        self.track: Track = Track(instrument=0)
+        self.song: Song = song
+        self.track_index: int = track_index
+        self.get_current_beat = get_current_beat
+        self.track: Track = self._resolve_track()
         self.ghost_note: Note | None = None
         self.cropping_note: bool = False
         self.current_pitch: int | None = None
         self.piano_size: int = piano_size
         self.ribbon_size: int = ribbon_size
         self.dimension: pygame.Rect = pygame.Rect(self.piano_size, -STEP_HEIGHT*12*PIXEL_SCALE, MAX_SONG_DURATION*BEAT_WIDTH, NUM_OCTAVES*STEP_HEIGHT*KEYS_PER_OCTAVE)
+
+    def _resolve_track(self) -> Track:
+        if self.song is None:
+            return Track(instrument=0)
+
+        while len(self.song.track_list) <= self.track_index:
+            self.song.add_track(Track(instrument=0))
+
+        return self.song.track_list[self.track_index]
 
     def add_note(self, note: Note):
         self.track.add_note(note)
@@ -246,4 +259,4 @@ class PianoRoll(Widget):
                              self.get_rect(self.ghost_note))
 
         # draw play head
-        pygame.draw.rect(self.screen, PLAY_HEAD_COLOR, pygame.Rect(self.current_beat * BEAT_WIDTH + self.dimension.x, 64, PIXEL_SCALE, SCREEN_HEIGHT))
+        pygame.draw.rect(self.screen, PLAY_HEAD_COLOR, pygame.Rect(self.get_current_beat() * BEAT_WIDTH + self.dimension.x, 64, PIXEL_SCALE, SCREEN_HEIGHT))

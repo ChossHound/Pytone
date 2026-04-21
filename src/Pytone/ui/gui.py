@@ -3,6 +3,8 @@ from ui.piano_roll import PianoRoll
 from ui.song_ribbon import SongRibbon
 from ui.cursor import Cursor
 from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
+from models.song import Song
+from models.audioEngine import Engine
 
 
 class GUI:
@@ -22,17 +24,20 @@ class GUI:
         self.clock: pygame.time.Clock = pygame.time.Clock()
         self.screen: pygame.Surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.FONT: pygame.freetype.Font = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
+        self.song = Song()
+        self.engine = Engine()
+        self.engine.start()
 
-        self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 64, 64)
         self.songribbon: SongRibbon = SongRibbon(self.screen, self.FONT, 64)
+        self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 64, 64, self.songribbon.get_current_beat, self.song, 0)
         Cursor().init(self.screen, (255, 255, 255), 8)
 
     def run(self) -> None:
         while True:
-            self.clock.tick(60)
+            dt = self.clock.tick(60)
             self.pianoroll.current_beat = self.songribbon.current_beat
             self.pianoroll.draw()
-            self.songribbon.draw()
+            self.songribbon.draw(dt)
             Cursor().draw()
             pygame.display.flip()
             self.screen.fill((0, 0, 0))

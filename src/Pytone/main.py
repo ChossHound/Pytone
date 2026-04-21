@@ -4,9 +4,13 @@ from models.note import Note
 from models.audioEngine import Engine
 from ui.gui import GUI
 
+
 def main() -> None:
     """import gaurd
     """
+
+    GUI().run()
+
     # song = Song()
     # track_1 = Track()
     # track_2 = Track(instrument="Taiko Drum")
@@ -25,7 +29,7 @@ def main() -> None:
     # engine.start()
     # engine.play_midi_once(mid)
     # engine.play_midi(mid, loop=True)
-    pyramid_song()
+    # pyramid_song()
 
 
 def pyramid_song():

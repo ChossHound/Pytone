@@ -9,6 +9,7 @@
     """
 from pathlib import Path
 from typing import Optional
+import threading
 # from importlib.resources import files
 from mido import MidiFile
 import fluidsynth
@@ -63,6 +64,8 @@ class Engine:
                 )
 
         self._started = False
+        self._playback_thread: Optional[threading.Thread] = None
+        self._stop_playback = threading.Event()
         self._initialized = True
 
         # self._test_audio()
@@ -83,10 +86,12 @@ class Engine:
             song (MidiFile): _description_
 
         Returns:
-            Npne: _description_
+            None: _description_
         """
         while True:
-            self.play_midi_once(song=song)
+            self.play_midi_once(song=song, stop_event=self._stop_playback)
+            if self._stop_playback.is_set():
+                break
             if not loop:
                 break
 
@@ -100,13 +105,38 @@ class Engine:
         """
         pass
 
-    def play_midi_once(self, song: MidiFile) -> None:
+    def play_midi_async(self, song: MidiFile, loop: bool = False) -> None:
+        """Play a MIDI file in a background thread so the UI stays responsive."""
+        if not isinstance(song, MidiFile):
+            raise TypeError("song must be a MidiFile")
+
+        previous_thread = self._playback_thread
+        self.stop()
+        if previous_thread is not None and previous_thread.is_alive():
+            previous_thread.join(timeout=0.1)
+
+        self._stop_playback = threading.Event()
+        self._playback_thread = threading.Thread(
+            target=self.play_midi,
+            kwargs={"song": song, "loop": loop},
+            daemon=True,
+        )
+        self._playback_thread.start()
+
+    def play_midi_once(self,
+                       song: MidiFile,
+                       stop_event: Optional[threading.Event] = None) -> None:
         """Sends a given Midifile to the soundcard to be played
         """
         if not isinstance(song, MidiFile):
             raise TypeError("song must be a MidiFile")
 
-        for message in song.play(meta_messages=True):
+        stop_event = threading.Event() if stop_event is None else stop_event
+
+        for message in song:
+            if stop_event.wait(message.time):
+                break
+
             if message.is_meta:
                 continue
 
@@ -159,8 +189,7 @@ class Engine:
             #         val=message.value,
             #     )
 
-        for channel in range(16):
-            self.synth.cc(chan=channel, ctrl=123, val=0)
+        self._all_notes_off()
 
     def play_wav(self, path: str) -> None:
         """Sends a .wav file to the audiocard to be played
@@ -197,3 +226,15 @@ class Engine:
             program (_type_): _description_
         """
         self.synth.program_change(chan=channel, prg=program)
+
+    def stop(self) -> None:
+        """Stop any active playback and silence all notes."""
+        self._stop_playback.set()
+        self._all_notes_off()
+
+    def _all_notes_off(self) -> None:
+        if not hasattr(self.synth, "cc"):
+            return
+
+        for channel in range(16):
+            self.synth.cc(chan=channel, ctrl=123, val=0)

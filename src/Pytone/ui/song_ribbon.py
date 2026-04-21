@@ -7,6 +7,9 @@ from ui.piano_roll import MAX_SONG_DURATION
 from ui.spin_box import SpinBox
 from ui.button import Button
 from ui.text_button import TextButton
+from models.song import Song
+from models.audioEngine import Engine
+from mido import bpm2tempo
 
 class SongRibbon(Widget):
     """A class for managing the playback of the song visually and interactively.
@@ -22,10 +25,12 @@ class SongRibbon(Widget):
      - ? Come back after merge
 
     """
-    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, size: int) -> None:
+    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, size: int, song: Song | None = None, engine: Engine | None = None) -> None:
         super().__init__(screen)
         self.font: pygame.freetype.Font = font
         self.size: int = size
+        self.song: Song = Song() if song is None else song
+        self.engine: Engine = Engine() if engine is None else engine
         self.play_button: TextButton = TextButton(screen, font, pygame.Rect(32*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), ">", self.toggle_playback)
         self.stop_button: Button = Button(screen, pygame.Rect(42*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), self.stop)
         self.progress_bar: pygame.Rect = pygame.Rect(32*PIXEL_SCALE, 12*PIXEL_SCALE, 128*PIXEL_SCALE, 2*PIXEL_SCALE)
@@ -33,12 +38,12 @@ class SongRibbon(Widget):
         self.current_beat: int = 0
         self.playing: bool = False
         self.scrubbing: bool = False
-        self.tempo = SpinBox(screen, font, (552, 8), 120, 1, 999)
+        self.tempo = SpinBox(screen, font, (552, 8), self.song.bpm, 5, 999)
+        self.elapsed_time: int = 0
 
-    def draw(self):
-        if self.playing and self.current_beat < self.song_length:
-            self.current_beat += 1
-
+    def draw(self, dt: int):
+        if self.playing:
+            self.elapsed_time += dt
         pygame.draw.rect(self.screen, BUMPER_COLOR, (0, 0, SCREEN_WIDTH, self.size))
 
         # draw play button
@@ -52,37 +57,41 @@ class SongRibbon(Widget):
 
         # draw progress bar
         pygame.draw.rect(self.screen, DARK_ACCENT, self.progress_bar)
-        progress: int = (self.current_beat * self.progress_bar.width) // self.song_length
+        progress: int = (self.get_current_beat() * self.progress_bar.width) // self.song_length
         progress = (progress // PIXEL_SCALE) * PIXEL_SCALE
         pygame.draw.rect(self.screen, BUTTON_COLOR, pygame.Rect(self.progress_bar.x, self.progress_bar.y, progress, self.progress_bar.height))
 
         # tempo
-        # self.FONT.render_to(self.screen, (324, 12), "T", TEXT_COLOR)
         self.tempo.draw()
 
-        # time signature
-        # self.FONT.render_to(self.screen, (452, 12), "S", TEXT_COLOR)
-        # self.time_signature_numerator.draw()
-        # self.FONT.render_to(self.screen, (554, 12), "/", TEXT_COLOR)
-        # self.time_signature_denomerator.draw()
+    def get_current_beat(self) -> int:
+        return int(self.elapsed_time / (bpm2tempo(self.tempo.value) / 1000 / 4))
 
     def toggle_playback(self):
         self.playing = not self.playing
 
+        # TEMPORARY CHANGES !
+        if self.playing:
+            self.restart()
+        else:
+            self.stop()
+
     def stop(self):
         self.playing = False
         self.current_beat = 0
+        self.engine.stop()
 
     def restart(self):
+        self.song.bpm = self.tempo.value
         self.playing = True
         self.current_beat = 0
+        self.elapsed_time = 0
+        self.engine.play_midi_async(self.song.create_midifile(path=None))
 
     def process(self, event):
         self.tempo.process(event)
         self.play_button.process(event)
         self.stop_button.process(event)
-        # self.time_signature_numerator.process(event)
-        # self.time_signature_denomerator.process(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
