@@ -29,7 +29,7 @@ class GUI:
         self.engine.start()
 
         self.songribbon: SongRibbon = SongRibbon(self.screen, self.FONT, 64)
-        self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 64, 64, self.songribbon.get_current_beat, self.song, 0)
+        self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 64, 64, lambda: self.songribbon.current_beat, self.song, 0)
         Cursor().init(self.screen, (255, 255, 255), 8)
 
     def run(self) -> None:
