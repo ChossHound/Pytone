@@ -94,7 +94,7 @@ class PianoRoll(Widget):
     def position_from_pitch(self, pitch: int) -> int:
         y: int = 119 - pitch
         y *= STEP_HEIGHT
-        return y 
+        return y
 
     def start_ghost_note(self, position: tuple[int, int]):
         # Extract pitch and beat from the position
@@ -103,6 +103,10 @@ class PianoRoll(Widget):
         y = self.pitch_from_position(y)
         self.cropping_note = False
         self.ghost_note = Note(y, x, duration=MIN_BEAT_DURATION)
+        if self.current_pitch is not None:
+            Engine().send_note_off(self.track.channel, self.current_pitch)
+        Engine().send_note_on(self.track.channel, y, 100)
+        self.current_pitch = y
 
     def update_ghost_note(self, position: tuple[int, int]):
         if self.ghost_note is not None:
@@ -119,7 +123,8 @@ class PianoRoll(Widget):
                 n: note = self.get_note_at_position(x, y, self.ghost_note.duration)
                 if n is None:
                     if self.ghost_note.pitch != y:
-                        Engine().send_note_off(self.track.channel, self.ghost_note.pitch)          
+                        Engine().send_note_off(self.track.channel, self.ghost_note.pitch)
+                        self.current_pitch = y
                         Engine().send_note_on(self.track.channel, y, 100)
                     self.ghost_note.pitch = y
                     self.ghost_note.start = x
@@ -130,6 +135,10 @@ class PianoRoll(Widget):
                 self.add_note(self.ghost_note)
             self.ghost_note = None
             self.cropping_note = False
+
+            if self.current_pitch is not None:
+                Engine().send_note_off(self.track.channel, self.current_pitch)
+                self.current_pitch = None
 
     def get_rect(self, note: Note) -> pygame.Rect:
         # Convert note properties to a pygame.Rect
@@ -204,7 +213,7 @@ class PianoRoll(Widget):
                 elif Cursor().is_overlapping((0, self.ribbon_size, self.piano_size, SCREEN_HEIGHT)):
                     #play note on piano
                     pitch: int = self.pitch_from_position(self.apply_dimension(Cursor().get_position())[1])
-                    if self.current_pitch != pitch or self.current_pitch is not None:
+                    if self.current_pitch != pitch and self.current_pitch is not None:
                         Engine().send_note_off(self.track.channel, self.current_pitch)
                     self.current_pitch = pitch
                     Engine().send_note_on(self.track.channel, pitch, 100)
