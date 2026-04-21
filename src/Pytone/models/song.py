@@ -211,7 +211,7 @@ class Song:
         """
         mid = MidiFile(type=1)
         new_track_list = []
-        
+
         for track in self.track_list:
             new_track = Track(channel=track.channel,
                               instrument=track.instrument,
