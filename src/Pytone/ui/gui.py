@@ -1,5 +1,4 @@
 import pygame
-from typing import List
 from ui.piano_roll import PianoRoll
 from ui.song_ribbon import SongRibbon
 from ui.cursor import Cursor

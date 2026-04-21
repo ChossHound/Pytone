@@ -2,8 +2,7 @@ from typing import Callable
 import pygame
 import pygame.freetype
 from ui.button import Button
-from ui.constants import PIXEL_SCALE, BUTTON_COLOR, TEXT_COLOR
-from ui.cursor import Cursor
+from ui.constants import PIXEL_SCALE, TEXT_COLOR
 
 
 class TextButton(Button):
@@ -17,8 +16,9 @@ class TextButton(Button):
         super().__init__(screen, rect, call_back)
         self.font = font
         self.text: str = text
-        pass
 
     def draw(self) -> None:
+        """ Draw the button to screen, then draw text above it.
+        """
         super().draw()
         self.font.render_to(self.screen, (self.rect.x + 2 * PIXEL_SCALE, self.rect.y + PIXEL_SCALE), self.text, TEXT_COLOR)

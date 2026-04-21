@@ -37,16 +37,25 @@ class SpinBox(Widget):
         self.minus: Button = Button(screen, pygame.Rect(x + self.width + 4, y + 20, 20, 12), self.decrement)
 
     def increment(self) -> None:
+        """Advace self.value based on self.get_next. Do not exceed self.max"""
         self.value = self.get_next(self.value)
         if self.value > self.max:
             self.value = self.max
 
     def decrement(self) -> None:
+        """Reduce self.value based on self.get_previous. Do not go past self.min"""
         self.value = self.get_previous(self.value)
         if self.value < self.min:
             self.value = self.min
 
     def draw(self):
+        # update
+        if (self.plus.is_held()):
+            self.plus.call_back()
+
+        if (self.minus.is_held()):
+            self.minus.call_back()
+
         x, y = self.position
 
         # text

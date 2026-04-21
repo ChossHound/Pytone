@@ -1,6 +1,4 @@
-
 import pygame
-import pygame.freetype
 from abc import ABC, abstractmethod
 
 
