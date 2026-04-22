@@ -161,11 +161,9 @@ def test_create_midifile_exports_all_tracks_and_uses_delta_times(tmp_path):
     song.add_track(first_track)
     song.add_track(second_track)
 
-    output_path = song.create_midifile(str(tmp_path / "example.mid"))
-
-    assert output_path == str((tmp_path / "example.mid").resolve())
-    assert Path(output_path).exists()
-
+    output_path = tmp_path / "example.mid"
+    midi_file = song.create_midifile()
+    midi_file.save(output_path)
     midi_file = MidiFile(output_path)
 
     assert len(midi_file.tracks) == 2
@@ -204,7 +202,9 @@ def test_create_midifile_uses_updated_track_instrument_value(tmp_path):
     track.instrument = "Voice Oohs"
     song.add_track(track)
 
-    output_path = song.create_midifile(str(tmp_path / "updated_instrument.mid"))
+    output_path = tmp_path / "updated_instrument.mid"
+    midi_file = song.create_midifile()
+    midi_file.save(output_path)
     midi_file = MidiFile(output_path)
 
     messages = [message for message in midi_file.tracks[0] if not message.is_meta]
@@ -214,12 +214,19 @@ def test_create_midifile_uses_updated_track_instrument_value(tmp_path):
     assert messages[0].program == Song.instrument_code("Voice Oohs")
 
 
-def test_export_to_midi_uses_dialog_selection_and_appends_mid_extension(
+def test_save_song_uses_dialog_selection_and_appends_mid_extension(
     monkeypatch,
+    tmp_path,
 ):
     song = Song()
     dialog_calls = {}
-    create_calls = []
+
+    track = Track(
+        channel=2,
+        instrument=10,
+        note_list=[Note(pitch=60, start=0, duration=4, velocity=70)],
+    )
+    song.add_track(track)
 
     class FakeRoot:
         def __init__(self):
@@ -245,17 +252,12 @@ def test_export_to_midi_uses_dialog_selection_and_appends_mid_extension(
         @staticmethod
         def asksaveasfilename(**kwargs):
             dialog_calls.update(kwargs)
-            return "exports/demo_song"
-
-    def fake_create_midifile(path):
-        create_calls.append(path)
-        return path
+            return str(tmp_path / "demo_song")
 
     monkeypatch.setattr(song_module, "tk", FakeTkModule)
     monkeypatch.setattr(song_module, "filedialog", FakeFileDialog)
-    monkeypatch.setattr(song, "create_midifile", fake_create_midifile)
 
-    output_path = song.export_to_midi(
+    output_path = song.save_song(
         initial_filename="demo_song.mid",
         initial_dir="exports",
     )
@@ -265,11 +267,16 @@ def test_export_to_midi_uses_dialog_selection_and_appends_mid_extension(
     assert dialog_calls["defaultextension"] == ".mid"
     assert dialog_calls["initialfile"] == "demo_song.mid"
     assert dialog_calls["initialdir"] == "exports"
-    assert output_path == os.path.abspath("exports/demo_song.mid")
-    assert create_calls == [os.path.abspath("exports/demo_song.mid")]
+    assert output_path == os.path.abspath(tmp_path / "demo_song.mid")
+    assert Path(output_path).exists()
+
+    midi_file = MidiFile(output_path)
+    messages = [message for message in midi_file.tracks[0] if not message.is_meta]
+    assert messages[0].type == "program_change"
+    assert messages[1].type == "note_on"
 
 
-def test_export_to_midi_returns_none_when_dialog_is_cancelled(monkeypatch):
+def test_save_song_returns_none_when_dialog_is_cancelled(monkeypatch):
     song = Song()
 
     class FakeRoot:
@@ -291,14 +298,135 @@ def test_export_to_midi_returns_none_when_dialog_is_cancelled(monkeypatch):
         def asksaveasfilename(**kwargs):
             return ""
 
-    def unexpected_create_midifile(path):
+    def unexpected_create_midifile():
         raise AssertionError("create_midifile should not be called")
 
     monkeypatch.setattr(song_module, "tk", FakeTkModule)
     monkeypatch.setattr(song_module, "filedialog", FakeFileDialog)
     monkeypatch.setattr(song, "create_midifile", unexpected_create_midifile)
 
-    assert song.export_to_midi() is None
+    assert song.save_song() is None
+
+
+def test_load_song_uses_dialog_selection_and_populates_tracks(
+    monkeypatch,
+    tmp_path,
+):
+    source_song = Song()
+    source_song.bpm = 132
+    source_song.signature = (3, 4)
+    source_song.track_list = [
+        Track(
+            channel=4,
+            instrument=48,
+            note_list=[Note(pitch=65, start=2, duration=4, velocity=84)],
+        )
+    ]
+    source_path = tmp_path / "loaded_song.mid"
+    source_song.save_song(path=str(source_path))
+
+    Song.reset_instance()
+    song = Song()
+    dialog_calls = {}
+
+    class FakeRoot:
+        def __init__(self):
+            self.withdrawn = False
+            self.destroyed = False
+
+        def withdraw(self):
+            self.withdrawn = True
+
+        def destroy(self):
+            self.destroyed = True
+
+    fake_root = FakeRoot()
+
+    class FakeTkModule:
+        TclError = RuntimeError
+
+        @staticmethod
+        def Tk():
+            return fake_root
+
+    class FakeFileDialog:
+        @staticmethod
+        def askopenfilename(**kwargs):
+            dialog_calls.update(kwargs)
+            return str(source_path)
+
+    monkeypatch.setattr(song_module, "tk", FakeTkModule)
+    monkeypatch.setattr(song_module, "filedialog", FakeFileDialog)
+
+    output_path = song.load_song(initial_dir="imports")
+
+    assert fake_root.withdrawn is True
+    assert fake_root.destroyed is True
+    assert dialog_calls["initialdir"] == "imports"
+    assert output_path == str(source_path.resolve())
+    assert song.bpm == 132
+    assert song.signature == (3, 4)
+    assert song.track_list == [
+        Track(
+            channel=4,
+            instrument=48,
+            note_list=[Note(pitch=65, start=2, duration=4, velocity=84)],
+        )
+    ]
+
+
+def test_load_song_returns_none_when_dialog_is_cancelled(monkeypatch):
+    song = Song()
+
+    class FakeRoot:
+        def withdraw(self):
+            return None
+
+        def destroy(self):
+            return None
+
+    class FakeTkModule:
+        TclError = RuntimeError
+
+        @staticmethod
+        def Tk():
+            return FakeRoot()
+
+    class FakeFileDialog:
+        @staticmethod
+        def askopenfilename(**kwargs):
+            return ""
+
+    def unexpected_build_tracks_from_midifile(_midifile):
+        raise AssertionError("build_tracks_from_midifile should not be called")
+
+    monkeypatch.setattr(song_module, "tk", FakeTkModule)
+    monkeypatch.setattr(song_module, "filedialog", FakeFileDialog)
+    monkeypatch.setattr(
+        song,
+        "build_tracks_from_midifile",
+        unexpected_build_tracks_from_midifile,
+    )
+
+    assert song.load_song() is None
+
+
+def test_load_song_rejects_non_midi_file_selection(tmp_path):
+    song = Song()
+    invalid_path = tmp_path / "not_a_song.txt"
+    invalid_path.write_text("definitely not midi", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="must be a MIDI file"):
+        song.load_song(path=str(invalid_path))
+
+
+def test_load_song_rejects_invalid_midi_contents(tmp_path):
+    song = Song()
+    invalid_path = tmp_path / "broken_song.mid"
+    invalid_path.write_bytes(b"not actually a midi file")
+
+    with pytest.raises(ValueError, match="not a valid MIDI file"):
+        song.load_song(path=str(invalid_path))
 
 
 def test_song_is_a_singleton_and_preserves_initial_configuration():
@@ -420,7 +548,9 @@ def test_create_midifile_emits_expected_track_and_message_counts(tracks):
         song.add_track(track)
 
     with TemporaryDirectory() as tmp_dir:
-        output_path = song.create_midifile(str(Path(tmp_dir) / "fuzz.mid"))
+        output_path = Path(tmp_dir) / "fuzz.mid"
+        midi_file = song.create_midifile()
+        midi_file.save(output_path)
         midi_file = MidiFile(output_path)
 
         assert len(midi_file.tracks) == len(tracks)

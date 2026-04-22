@@ -11,22 +11,32 @@ from models.song import Song
 from models.audioEngine import Engine
 from mido import bpm2tempo
 
+
 class SongRibbon(Widget):
-    """A class for managing the playback of the song visually and interactively.
-    Allows the user to play, pause, stop, or restart the song.
+    """A class for managing the playback of the song visually 
+    and interactively allows the user to play, pause, stop,
+    or restart the song.
 
     Properties:
      - size: how tall the song ribbon should be
      - song:
-     - play_button: a ui.text_button object that allows the user to toggle play back
+     - play_button: a ui.text_button object that allows the
+        user to toggle play back
      - stop_button: a ui.button object that allows the user to stop play back
-     - progress_bar: a pygame.Rect that is used for drawing how far into the song the play head is.
+     - progress_bar: a pygame.Rect that is used for drawing how far into the
+        song the play head is.
      - song_length: an int that determines how long the song can go.
      - current_beat: an int based on where in the song the play head is.
      - ? Come back after merge
 
     """
-    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, size: int, song: Song | None = None, engine: Engine | None = None) -> None:
+
+    def __init__(self,
+                 screen: pygame.Surface,
+                 font: pygame.freetype.Font,
+                 size: int,
+                 song: Song | None = None,
+                 engine: Engine | None = None) -> None:
         super().__init__(screen)
         self.font: pygame.freetype.Font = font
         self.size: int = size
@@ -94,6 +104,9 @@ class SongRibbon(Widget):
         self.play_button.process(event)
         self.stop_button.process(event)
         self.progress_bar.process(event)
+
+        # self.save_button.process(event)
+        # self.load_button.process(event)
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:

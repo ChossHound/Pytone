@@ -1,5 +1,6 @@
 mido
 pygame
+pygame_gui
 pyfluidsynth
 hypothesis
 pytest
