@@ -44,7 +44,7 @@ class Song:
         return cls._instance
 
     def __init__(self,
-                 bpm: int = 100,
+                 bpm: int = 120,
                  length: int = 16,
                  signature: Tuple[int, int] = (4, 4),
                  loop: bool = True

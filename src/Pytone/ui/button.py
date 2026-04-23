@@ -27,13 +27,18 @@ class Button(Widget):
 
     def process(self, event: pygame.event.Event) -> None:
         if (Cursor().is_overlapping(self.rect)):
-            self.pressed = Cursor().holding_left
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                self.pressed = True
                 self.call_back()
                 self.last_called = pygame.time.get_ticks()
+        else:
+            self.pressed = False
+
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self.pressed = False
 
     def is_held(self) -> bool:
         """Return whether or not the button is being held.
            A button is held when it has been 'pressed' for longer than half a second.
         """
-        return self.pressed and pygame.time.get_ticks() - self.last_called > 500
+        return self.pressed and pygame.time.get_ticks() - self.last_called > 500 and Cursor().is_overlapping(self.rect)

@@ -21,7 +21,7 @@ class SpinBox(Widget):
      - plus: a button that calls increment
      - minus: a button that calls decrement
     """
-    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, position: tuple[int, int], value, min_value, max_value, get_next: Callable[[int], int] = lambda x: x + 1, get_previous: Callable[[int], int] = lambda x: x - 1):
+    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, position: tuple[int, int], value, min_value, max_value, get_next: Callable[[int], int] = lambda x: x + 1, get_previous: Callable[[int], int] = lambda x: x - 1, on_change: Callable[[int], None] = lambda x: None):
         super().__init__(screen)
         self.font: pygame.freetype.Font = font
         self.position: tuple[int, int] = position
@@ -30,6 +30,7 @@ class SpinBox(Widget):
         self.max: int = max_value
         self.get_next: Callable[[int], int] = get_next
         self.get_previous: Callable[[int], int] = get_previous
+        self.on_change: Callable[[None], None] = on_change
         self.width = 16 * (int(math.log10(max_value)) + 1) + 16
 
         x, y = self.position
@@ -38,15 +39,21 @@ class SpinBox(Widget):
 
     def increment(self) -> None:
         """Advace self.value based on self.get_next. Do not exceed self.max"""
+        old: int = self.value
         self.value = self.get_next(self.value)
         if self.value > self.max:
             self.value = self.max
+        if old != self.value:
+            self.on_change(old)
 
     def decrement(self) -> None:
         """Reduce self.value based on self.get_previous. Do not go past self.min"""
+        old: int = self.value
         self.value = self.get_previous(self.value)
         if self.value < self.min:
             self.value = self.min
+        if old != self.value:
+            self.on_change(old)
 
     def draw(self):
         # update

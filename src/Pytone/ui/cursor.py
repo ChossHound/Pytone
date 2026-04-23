@@ -26,6 +26,7 @@ class Cursor():
         return cls._instance
 
     def init(self, screen: pygame.Surface, color: tuple[int, int, int], size: int) -> None:
+        """Set properties about the Cursor singleton"""
         self.screen: pygame.Surface = screen
         self.holding_left: bool = False
         self.holding_right: bool = False
@@ -33,6 +34,7 @@ class Cursor():
         self.size: int = size
 
     def get_position(self) -> tuple[int, int]:
+        """Return where on the screen the mouse is. Snap the position to the pixel scale"""
         (x, y) = pygame.mouse.get_pos()
         x //= PIXEL_SCALE
         y //= PIXEL_SCALE
@@ -41,9 +43,11 @@ class Cursor():
         return (x, y)
 
     def is_overlapping(self, other: pygame.Rect) -> bool:
+        """Check if the cursor is overlapping a rect"""
         return self.get_rect().colliderect(other)
 
     def get_rect(self) -> pygame.Rect:
+        """Return how the rectangle that represents how to draw the cursor"""
         x, y = self.get_position()
         r: pygame.Rect = pygame.Rect(x, y, self.size, self.size)
         return r

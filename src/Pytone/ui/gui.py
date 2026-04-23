@@ -18,21 +18,21 @@ class GUI:
      - songribbon: the SongRibbon object that allows the user to manage playback of the song.
     """
     def __init__(self):
+        """Stand up and connect widgets"""
         pygame.init()
         pygame.display.set_caption("Pytone")
 
         self.clock: pygame.time.Clock = pygame.time.Clock()
         self.screen: pygame.Surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.FONT: pygame.freetype.Font = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
-        self.song = Song()
-        self.engine = Engine()
-        self.engine.start()
+        Engine().start()
 
         self.songribbon: SongRibbon = SongRibbon(self.screen, self.FONT, 64)
-        self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 64, 64, lambda: self.songribbon.current_beat, self.song, 0)
+        self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 64, 64, lambda: self.songribbon.current_beat, Song(), 0)
         Cursor().init(self.screen, (255, 255, 255), 8)
 
     def run(self) -> None:
+        """Run the program forever"""
         while True:
             dt = self.clock.tick(60)
             self.pianoroll.current_beat = self.songribbon.current_beat

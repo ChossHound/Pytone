@@ -17,21 +17,19 @@ class SongRibbon(Widget):
 
     Properties:
      - size: how tall the song ribbon should be
-     - song:
+     - font: the freetype font object for drawing text to the screen.
      - play_button: a ui.text_button object that allows the user to toggle play back
      - stop_button: a ui.button object that allows the user to stop play back
-     - progress_bar: a pygame.Rect that is used for drawing how far into the song the play head is.
      - song_length: an int that determines how long the song can go.
-     - current_beat: an int based on where in the song the play head is.
-     - ? Come back after merge
-
+     - progress_bar: a pygame.Rect that is used for drawing how far into the song the play head is.
+     - playing: a bool that tracks if the song is playing or not
+     - tempo: a ui.spinbox object that sets the bpm of the song
+     - elapsed_time: an int that tracks the number of milliseconds that have passed since the song started.
     """
-    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, size: int, song: Song | None = None, engine: Engine | None = None) -> None:
+    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, size: int) -> None:
         super().__init__(screen)
         self.font: pygame.freetype.Font = font
         self.size: int = size
-        self.song: Song = Song() if song is None else song
-        self.engine: Engine = Engine() if engine is None else engine
         self.play_button: TextButton = TextButton(screen, font, pygame.Rect(32*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), ">", self.toggle_playback)
         self.stop_button: Button = Button(screen, pygame.Rect(42*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), self.stop)
         self.song_length: int = MAX_SONG_DURATION
@@ -39,8 +37,7 @@ class SongRibbon(Widget):
                                            lambda: self.current_beat / self.song_length,
                                            self.set_beat_from_percentage)
         self.playing: bool = False
-        self.scrubbing: bool = False
-        self.tempo = SpinBox(screen, font, (552, 8), self.song.bpm, 5, 999)
+        self.tempo = SpinBox(screen, font, (552, 8), Song().bpm, 5, 999, on_change=lambda old: self.reset_beat(old))
         self.elapsed_time: int = 0
 
     def draw(self, dt: int):
@@ -63,31 +60,64 @@ class SongRibbon(Widget):
         # tempo
         self.tempo.draw()
 
+    @staticmethod
+    def beat_from_time(time: int, tempo: int) -> int:
+        """Convert the time elapsesed since start to the number of beats which would have occurred"""
+        return int(time / (bpm2tempo(tempo) / 1000 / 4))
+
     @property
     def current_beat(self) -> int:
-        return int(self.elapsed_time / (bpm2tempo(self.tempo.value) / 1000 / 4))
+        """Get the current beat based the time that has passed and the BPM"""
+        return SongRibbon.beat_from_time(self.elapsed_time, self.tempo.value)
 
     @current_beat.setter
     def current_beat(self, value: int) -> None:
+        """Set the elapsed time based on the new number of beats to have passed"""
         self.elapsed_time = value * (bpm2tempo(self.tempo.value) / 1000 / 4)
 
     def set_beat_from_percentage(self, percent: float) -> None:
+        """Set the current beat based on percentage of the song that has played"""
+        self.pause()
         self.current_beat = int(percent * self.song_length)
 
+    def reset_beat(self, tempo: int):
+        """Adjust time_elapsed to keep current_beat consistent when tempo changes"""
+        old_beat: int = SongRibbon.beat_from_time(self.elapsed_time, tempo)
+        while self.current_beat != old_beat:
+            self.current_beat = old_beat
+
     def toggle_playback(self):
-        self.playing = not self.playing
+        """Pause or play the song"""
+        if self.playing:
+            self.pause()
+        else:
+            self.resume()
+
+    def pause(self):
+        """Stop the song from playing but do not forget the position"""
+        self.playing = False
+
+    def resume(self):
+        """Play the song from the last position"""
+        self.playing = True
+        Song().bpm = self.tempo.value
+
+        if self.current_beat == 0:
+            Engine().play_midi_async(Song().create_midifile(path=None))
+        else:
+            Song().create_midifile_from(0)
 
     def stop(self):
-        self.playing = False
+        """Stop playing the song and forget how far we were before"""
+        self.pause()
         self.current_beat = 0
-        self.engine.stop()
 
     def restart(self):
-        self.song.bpm = self.tempo.value
-        self.playing = True
-        self.current_beat = 0
+        """Play the song from the start"""
         self.elapsed_time = 0
-        self.engine.play_midi_async(self.song.create_midifile(path=None))
+        self.playing = True
+        Song().bpm = self.tempo.value
+        Engine().play_midi_async(Song().create_midifile(path=None))
 
     def process(self, event):
         self.tempo.process(event)
