@@ -19,6 +19,7 @@ NUM_OCTAVES: int = 8
 
 # colors
 NOTE_COLOR: tuple[int, int, int] = (81, 152, 179)
+NOTE_BORDER_COLOR: tuple[int, int, int] = (68, 133, 158)
 GRID_COLOR: tuple[int, int, int] = (74, 101, 108)
 ALT_GRID_COLOR: tuple[int, int, int] = (58, 82, 88)
 GHOST_NOTE_COLOR: tuple[int, int, int] = (125, 199, 227)
@@ -250,7 +251,7 @@ class PianoRoll(Widget):
             # draw piano keys
             color_index: int = i % KEYS_PER_OCTAVE
             pygame.draw.rect(self.screen, KEY_COLORS[color_index], (0, i*STEP_HEIGHT + self.dimension.y, self.dimension.x, STEP_HEIGHT))
-        
+
         # draw beat markers
         for i in range(0, 120, 16):
             start: int = i*BEAT_WIDTH + self.dimension.x
@@ -262,7 +263,9 @@ class PianoRoll(Widget):
 
         # draw notes
         for note in self.track.note_list:
-            pygame.draw.rect(self.screen, NOTE_COLOR, self.get_rect(note))
+            note_rect: pygame.Rect = self.get_rect(note)
+            pygame.draw.rect(self.screen, NOTE_COLOR, note_rect)
+            pygame.draw.rect(self.screen, NOTE_BORDER_COLOR, (note_rect[0] + note_rect[2] - PIXEL_SCALE, note_rect[1], PIXEL_SCALE, note_rect[3]))
         if self.ghost_note is not None:
             pygame.draw.rect(self.screen, GHOST_NOTE_COLOR,
                              self.get_rect(self.ghost_note))
