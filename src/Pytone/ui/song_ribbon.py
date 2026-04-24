@@ -13,6 +13,7 @@ from ui.text_button import TextButton
 from ui.slider import Slider
 from ui.dropdown import DropDown
 from models.song import Song
+from models.track import Track
 from models.audioEngine import Engine
 from mido import bpm2tempo
 
@@ -47,7 +48,7 @@ class SongRibbon(Widget):
                                            self.set_beat_from_percentage)
         self.playing: bool = False
         self.tempo: SpinBox = SpinBox(screen, font, (552, 8), Song().bpm, 5, 999, on_change=lambda old: self.reset_beat(old))
-        self.track: DropDown = DropDown(screen, font, (37*PIXEL_SCALE, 16*PIXEL_SCALE), [("1", 1), ("2", 2), ("3", 3), ("4", 4)])
+        self.track: DropDown = DropDown(screen, font, (37*PIXEL_SCALE, 16*PIXEL_SCALE), [("1", 0), ("2", 1), ("3", 2), ("4", 3)], on_change=self.update_track)
         self.instrument: DropDown = DropDown(screen, font, (53*PIXEL_SCALE, 16*PIXEL_SCALE), [
             ("Acoustic Grand Piano", 1),
             ("Electric Piano", 5),
@@ -70,6 +71,7 @@ class SongRibbon(Widget):
             ("Square Wave", 81),
             ("Taiko Drum", 117)], on_change=self.update_instrument)
         self.elapsed_time: int = 0
+        self.on_track_change: Callable[[int], None] = lambda: None
 
     def draw(self, dt: int):
         if self.playing:
@@ -87,7 +89,7 @@ class SongRibbon(Widget):
 
         # draw save button
         self.save_button.draw()
-        
+
         # draw load button
         self.load_button.draw()
 
@@ -123,8 +125,14 @@ class SongRibbon(Widget):
         while self.current_beat != old_beat:
             self.current_beat = old_beat
 
-    def update_instrument(self):
-        Song().track_list[0].instrument = self.instrument.get_value()
+    def update_instrument(self, new_instrument: int):
+        Song().track_list[self.track.get_value()].instrument = new_instrument
+        Engine().send_program_change(self.track.get_value(), new_instrument)
+
+    def update_track(self, new_track: int):
+        self.instrument.set_value(Song().track_list[new_track].instrument)
+        Engine().send_program_change(self.track.get_value(), Song().track_list[new_track].instrument)
+        self.on_track_change(new_track)
 
     def save_song(self):
         """Open a tkinter filedialog to choose where to save the song"""

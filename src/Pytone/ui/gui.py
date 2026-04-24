@@ -4,6 +4,7 @@ from ui.song_ribbon import SongRibbon
 from ui.cursor import Cursor
 from ui.constants import PIXEL_SCALE
 from models.song import Song
+from models.track import Track
 from models.audioEngine import Engine
 
 
@@ -27,8 +28,13 @@ class GUI:
         self.FONT: pygame.freetype.Font = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
         Engine().start()
 
+        Song().add_track(Track(instrument=1))
+        Song().add_track(Track(instrument=1))
+        Song().add_track(Track(instrument=1))
+        Song().add_track(Track(instrument=1))
         self.songribbon: SongRibbon = SongRibbon(self.screen, self.FONT, 30*PIXEL_SCALE)
         self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 16*PIXEL_SCALE, 30*PIXEL_SCALE, lambda: self.songribbon.current_beat, 0)
+        self.songribbon.on_track_change = self.pianoroll.update_track
         Cursor().init(self.screen, (255, 255, 255), 8)
 
     def run(self) -> None:
