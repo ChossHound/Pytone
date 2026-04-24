@@ -64,7 +64,7 @@ class SongRibbon(Widget):
             ("Soprano Sax", 65),
             ("Flute", 73),
             ("Square Wave", 81),
-            ("Taiko Drum", 117)], on_change=lambda: Song().select_instrument(0, self.instrument.get_value()))
+            ("Taiko Drum", 117)], on_change=self.update_instrument)
         self.elapsed_time: int = 0
 
     def draw(self, dt: int):
@@ -119,6 +119,9 @@ class SongRibbon(Widget):
         while self.current_beat != old_beat:
             self.current_beat = old_beat
 
+    def update_instrument(self):
+        Song().track_list[0].instrument = self.instrument.get_value()
+
     def toggle_playback(self):
         """Pause or play the song"""
         if self.playing:
@@ -129,7 +132,7 @@ class SongRibbon(Widget):
     def pause(self):
         """Stop the song from playing but do not forget the position"""
         self.playing = False
-        Engine().pause()
+        Engine().stop()
 
     def resume(self):
         """Play the song from the last position"""
@@ -153,7 +156,7 @@ class SongRibbon(Widget):
         self.elapsed_time = 0
         self.playing = True
         Song().bpm = self.tempo.value
-        Engine().play_midi_async(Song().create_midifile(path=None))
+        Engine().play_midi_async(Song().create_midifile())
 
     def process(self, event):
         self.tempo.process(event)

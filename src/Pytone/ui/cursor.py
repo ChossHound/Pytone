@@ -1,6 +1,7 @@
 import pygame
 from ui.constants import PIXEL_SCALE
-
+from ui.widget import Widget
+from typing import Optional
 
 class Cursor():
     """ A singleton object for tracking and drawing the cursor to the screen.
@@ -32,6 +33,16 @@ class Cursor():
         self.holding_right: bool = False
         self.color: tuple[int, int, int] = color
         self.size: int = size
+        self.focus: Optional[Widget] = None
+
+    def obtain_focus(self, object: Widget) -> None:
+        """Obtain the cursors focus"""
+        self.focus = object
+
+    def relinquish_focus(self, object: Widget) -> None:
+        """Give up focus if the object already had it"""
+        if self.focus == object:
+            self.focus = None
 
     def get_position(self) -> tuple[int, int]:
         """Return where on the screen the mouse is. Snap the position to the pixel scale"""
@@ -42,8 +53,10 @@ class Cursor():
         y *= PIXEL_SCALE
         return (x, y)
 
-    def is_overlapping(self, other: pygame.Rect) -> bool:
-        """Check if the cursor is overlapping a rect"""
+    def is_overlapping(self, other: pygame.Rect, object: Optional[Widget] = None) -> bool:
+        """Check if the cursor is overlapping a rect. Checks if the object is the current focus"""
+        if self.focus is not None and self.focus != object:
+            return False
         return self.get_rect().colliderect(other)
 
     def get_rect(self) -> pygame.Rect:
