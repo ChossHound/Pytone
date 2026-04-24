@@ -2,7 +2,7 @@ import pygame
 from ui.piano_roll import PianoRoll
 from ui.song_ribbon import SongRibbon
 from ui.cursor import Cursor
-from ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, PIXEL_SCALE
+from ui.constants import PIXEL_SCALE
 from models.song import Song
 from models.audioEngine import Engine
 
@@ -23,7 +23,7 @@ class GUI:
         pygame.display.set_caption("Pytone")
 
         self.clock: pygame.time.Clock = pygame.time.Clock()
-        self.screen: pygame.Surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen: pygame.Surface = pygame.display.set_mode((200*PIXEL_SCALE, 200*PIXEL_SCALE))
         self.FONT: pygame.freetype.Font = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
         Engine().start()
 

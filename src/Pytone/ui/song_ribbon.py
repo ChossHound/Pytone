@@ -1,7 +1,7 @@
 import pygame
 import pygame.freetype
 from ui.widget import Widget
-from ui.constants import SCREEN_WIDTH, PIXEL_SCALE, BUMPER_COLOR, DARK_ACCENT, BUTTON_COLOR, TEXT_COLOR
+from ui.constants import PIXEL_SCALE, BUMPER_COLOR, DARK_ACCENT, BUTTON_COLOR, TEXT_COLOR
 from ui.piano_roll import MAX_SONG_DURATION
 from ui.spin_box import SpinBox
 from ui.button import Button
@@ -66,7 +66,7 @@ class SongRibbon(Widget):
     def draw(self, dt: int):
         if self.playing:
             self.elapsed_time += dt
-        pygame.draw.rect(self.screen, BUMPER_COLOR, (0, 0, SCREEN_WIDTH, self.size))
+        pygame.draw.rect(self.screen, BUMPER_COLOR, (0, 0, self.screen.get_size()[0], self.size))
 
         # draw play button
         self.play_button.text = "||" if self.playing else ">"
