@@ -214,6 +214,49 @@ def test_create_midifile_uses_updated_track_instrument_value(tmp_path):
     assert messages[0].program == Song.instrument_code("Voice Oohs")
 
 
+def test_create_midifile_from_skips_earlier_notes_and_rebases_times(tmp_path):
+    song = Song()
+    track = Track(
+        channel=2,
+        instrument=10,
+        note_list=[
+            Note(pitch=60, start=1, duration=2, velocity=70),
+            Note(pitch=64, start=4, duration=4, velocity=80),
+            Note(pitch=67, start=10, duration=2, velocity=90),
+        ],
+    )
+    song.add_track(track)
+
+    output_path = tmp_path / "from_beat.mid"
+    midi_file = song.create_midifile_from(4)
+    midi_file.save(output_path)
+    midi_file = MidiFile(output_path)
+
+    messages = [message for message in midi_file.tracks[0] if not message.is_meta]
+
+    assert [message.type for message in messages] == [
+        "program_change",
+        "note_on",
+        "note_off",
+        "note_on",
+        "note_off",
+    ]
+
+    assert messages[1].note == 64
+    assert messages[1].time == 0
+    assert messages[2].time == midi_file.ticks_per_beat
+    assert messages[3].note == 67
+    assert messages[3].time == midi_file.ticks_per_beat // 2
+    assert messages[4].time == midi_file.ticks_per_beat // 2
+
+
+def test_create_midifile_from_rejects_negative_starting_beat():
+    song = fresh_song()
+
+    with pytest.raises(ValueError, match="starting_beat must be at least 0"):
+        song.create_midifile_from(-1)
+
+
 def test_save_song_uses_dialog_selection_and_appends_mid_extension(
     monkeypatch,
     tmp_path,

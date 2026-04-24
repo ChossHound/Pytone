@@ -204,17 +204,14 @@ class Song:
             MidiFile: a midifile of the sub-song starting from
                 position starting_beat
         """
+        if not isinstance(starting_beat, int):
+            raise TypeError("starting_beat must be an int")
+        if starting_beat < 0:
+            raise ValueError("starting_beat must be at least 0")
+
         mid = MidiFile(type=1)
-        new_track_list = []
 
         for track in self.track_list:
-            new_track = Track(channel=track.channel,
-                              instrument=track.instrument,
-                              note_list=[note for note in track if note.start >= starting_beat])
-
-            new_track_list.append(new_track)
-
-        for track in new_track_list:
             mid_track = MidiTrack()
             instrument = track.instrument
             channel = track.channel
@@ -248,7 +245,16 @@ class Song:
 
             timed_messages: List[Tuple[int, Message]] = []
             for note in getattr(track, "_note_list", []):
-                timed_messages.extend(self.note_to_message(note, channel))
+                if note.start < starting_beat:
+                    continue
+
+                rebased_note = Note(
+                    pitch=note.pitch,
+                    start=note.start - starting_beat,
+                    duration=note.duration,
+                    velocity=note.velocity,
+                )
+                timed_messages.extend(self.note_to_message(rebased_note, channel))
 
             timed_messages.sort(
                 key=lambda item: (

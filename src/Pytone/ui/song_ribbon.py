@@ -129,6 +129,7 @@ class SongRibbon(Widget):
     def pause(self):
         """Stop the song from playing but do not forget the position"""
         self.playing = False
+        Engine().pause()
 
     def resume(self):
         """Play the song from the last position"""
@@ -136,9 +137,11 @@ class SongRibbon(Widget):
         Song().bpm = self.tempo.value
 
         if self.current_beat == 0:
-            Engine().play_midi_async(Song().create_midifile(path=None))
+            Engine().play_midi_async(Song().create_midifile())
         else:
-            Song().create_midifile_from(0)
+            Engine().play_midi_async(
+                Song().create_midifile_from(self.current_beat)
+            )
 
     def stop(self):
         """Stop playing the song and forget how far we were before"""

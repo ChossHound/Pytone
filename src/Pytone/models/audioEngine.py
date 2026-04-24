@@ -96,14 +96,8 @@ class Engine:
                 break
 
     def pause(self) -> None:
-        """_summary_
-        """
-        pass
-
-    def restart(self) -> None:
-        """_summary_
-        """
-        pass
+        """Pause active playback and silence any sustained notes."""
+        self.stop()
 
     def play_midi_async(self, song: MidiFile, loop: bool = False) -> None:
         """Play a MIDI file in a background thread so the UI stays responsive."""
