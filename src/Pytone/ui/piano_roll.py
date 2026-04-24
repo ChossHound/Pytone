@@ -53,7 +53,7 @@ class PianoRoll(Widget):
         self.font: pygame.freetype.Font = font
         self.track_index: int = track_index
         self.get_current_beat = get_current_beat
-        self.track: Track = self._resolve_track()
+        self.track: Track = Song().track_list[track_index]
         self.ghost_note: Note | None = None
         self.cropping_note: bool = False
         self.current_pitch: int | None = None
@@ -61,12 +61,9 @@ class PianoRoll(Widget):
         self.ribbon_size: int = ribbon_size
         self.dimension: pygame.Rect = pygame.Rect(self.piano_size, -STEP_HEIGHT*12*PIXEL_SCALE, MAX_SONG_DURATION*BEAT_WIDTH, NUM_OCTAVES*STEP_HEIGHT*KEYS_PER_OCTAVE)
 
-    def _resolve_track(self) -> Track:
-        """Find an audio track in the engine to put this song in"""
-        while len(Song().track_list) <= self.track_index:
-            Song().add_track(Track(instrument=0))
-
-        return Song().track_list[self.track_index]
+    def update_track(self, new_track: int):
+        self.track_index = new_track
+        self.track = Song().track_list[self.track_index]
 
     def add_note(self, note: Note):
         """Add a note to the current track"""

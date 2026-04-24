@@ -23,7 +23,7 @@ class DropDown(Widget):
         self.width: int = len(max(options, key=lambda x: len(x[0]))[0]) * 4*PIXEL_SCALE + 10*PIXEL_SCALE
         self.index: int = 0
         self.open: bool = False
-        self.on_change: Callable[[None], None] = on_change
+        self.on_change: Callable[[int], None] = on_change
 
     def get_rect(self) -> pygame.Rect:
         """Get the bounding box for the widget. Changes if it is open or not"""
@@ -65,7 +65,7 @@ class DropDown(Widget):
                     old: int = self.index
                     self.index = min(max(int(position), 0), len(self.options) - 1)
                     if old != self.index:
-                        self.on_change()
+                        self.on_change(self.options[self.index][1])
                     Cursor().relinquish_focus(self)
                     self.open = False
                 else:
