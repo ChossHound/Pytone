@@ -56,7 +56,7 @@ class DropDown(Widget):
 
     def process(self, event: pygame.event.Event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if Cursor().is_overlapping(self.get_rect()):
+            if Cursor().is_overlapping(self.get_rect(), self):
                 if self.open:
                     position: int = Cursor().get_position()[1]
                     position -= self.get_rect()[1]
@@ -66,6 +66,11 @@ class DropDown(Widget):
                     self.index = min(max(int(position), 0), len(self.options) - 1)
                     if old != self.index:
                         self.on_change()
-                self.open = not self.open
+                    Cursor().relinquish_focus(self)
+                    self.open = False
+                else:
+                    self.open = True
+                    Cursor().obtain_focus(self)
             else:
                 self.open = False
+                Cursor().relinquish_focus(self)

@@ -28,7 +28,7 @@ class GUI:
         Engine().start()
 
         self.songribbon: SongRibbon = SongRibbon(self.screen, self.FONT, 30*PIXEL_SCALE)
-        self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 16*PIXEL_SCALE, 30*PIXEL_SCALE, lambda: self.songribbon.current_beat, Song(), 0)
+        self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 16*PIXEL_SCALE, 30*PIXEL_SCALE, lambda: self.songribbon.current_beat, 0)
         Cursor().init(self.screen, (255, 255, 255), 8)
 
     def run(self) -> None:

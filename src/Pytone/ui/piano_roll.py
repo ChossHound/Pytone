@@ -48,10 +48,9 @@ class PianoRoll(Widget):
      - self.ribbon_size: an int that determines how large the song_ribbon is on the screen. Because song_ribbon is handled by ui.song_rubbon, this is used just to determine how far the piano roll can scroll without overlapping.
      - dimension: a pygame.rect that holds the position of notes. .x and .y are offset by the user panning around the piano roll.
     """
-    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, piano_size: int, ribbon_size: int, get_current_beat: Callable[[None], int], song: Song, track_index: int):
+    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, piano_size: int, ribbon_size: int, get_current_beat: Callable[[None], int], track_index: int):
         super().__init__(screen)
         self.font: pygame.freetype.Font = font
-        self.song: Song = song
         self.track_index: int = track_index
         self.get_current_beat = get_current_beat
         self.track: Track = self._resolve_track()
@@ -64,13 +63,10 @@ class PianoRoll(Widget):
 
     def _resolve_track(self) -> Track:
         """Find an audio track in the engine to put this song in"""
-        if self.song is None:
-            return Track(instrument=0)
+        while len(Song().track_list) <= self.track_index:
+            Song().add_track(Track(instrument=0))
 
-        while len(self.song.track_list) <= self.track_index:
-            self.song.add_track(Track(instrument=0))
-
-        return self.song.track_list[self.track_index]
+        return Song().track_list[self.track_index]
 
     def add_note(self, note: Note):
         """Add a note to the current track"""
