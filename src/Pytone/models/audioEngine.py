@@ -216,8 +216,8 @@ class Engine:
         """_summary_
 
         Args:
-            channel (_type_): _description_
-            program (_type_): _description_
+            channel (_type_): which channel to play on
+            program (_type_): which instrument to play
         """
         self.synth.program_change(chan=channel, prg=program)
 

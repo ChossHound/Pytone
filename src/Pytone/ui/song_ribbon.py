@@ -1,3 +1,7 @@
+from pathlib import Path
+import os
+import tkinter as tk
+from tkinter import filedialog
 import pygame
 import pygame.freetype
 from ui.widget import Widget
@@ -35,8 +39,8 @@ class SongRibbon(Widget):
         self.size: int = size
         self.play_button: TextButton = TextButton(screen, font, pygame.Rect(32*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), ">", self.toggle_playback)
         self.stop_button: Button = Button(screen, pygame.Rect(42*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), self.stop)
-        self.save_button: TextButton = TextButton(screen, font, pygame.Rect(18*PIXEL_SCALE, 2*PIXEL_SCALE, 16*PIXEL_SCALE, 8*PIXEL_SCALE), 'S', Song().save_song)
-        self.load_button: TextButton = TextButton(screen, font, pygame.Rect(2*PIXEL_SCALE, 2*PIXEL_SCALE, 16*PIXEL_SCALE, 8*PIXEL_SCALE), 'L', Song().load_song)
+        self.save_button: TextButton = TextButton(screen, font, pygame.Rect(52*PIXEL_SCALE, 2*PIXEL_SCALE, 16*PIXEL_SCALE, 8*PIXEL_SCALE), 'Sv', Song().save_song)
+        self.load_button: TextButton = TextButton(screen, font, pygame.Rect(70*PIXEL_SCALE, 2*PIXEL_SCALE, 16*PIXEL_SCALE, 8*PIXEL_SCALE), 'Ld', Song().load_song)
         self.song_length: int = MAX_SONG_DURATION
         self.progress_bar: Slider = Slider(screen, (32*PIXEL_SCALE, 12*PIXEL_SCALE), 128*PIXEL_SCALE,
                                            lambda: self.current_beat / self.song_length,
@@ -121,6 +125,46 @@ class SongRibbon(Widget):
 
     def update_instrument(self):
         Song().track_list[0].instrument = self.instrument.get_value()
+
+    def save_song(self):
+        """Open a tkinter filedialog to choose where to save the song"""
+        root =tk.Tk()
+        root.withdraw()
+        root.update()
+
+        try:
+            root = tk.Tk()
+            root.withdraw()
+            root.update()
+            file_name = filedialog.asksaveasfilename(
+                title="Save As",
+                defaultextension=".mid",
+                filetypes=[
+                    ("MIDI files", "*.mid *.midi")
+                ],
+                initialfile="song.mid",
+                initialdir=str(Path.home()),
+                confirmoverwrite=True
+                )
+        except tk.TclError as exc:
+            raise RuntimeError(
+                "Could not open the save dialog. "
+                "Check that a desktop display is available."
+            ) from exc
+        finally:
+            if root is not None:
+                root.destroy()
+
+        if not file_name:
+            return None
+
+        destination = os.path.abspath(self._normalize_midifile_path(destination))
+        midifile = self.create_midifile()
+        midifile.save(destination)
+        return destination
+
+    def load_song(self):
+        pass
 
     def toggle_playback(self):
         """Pause or play the song"""

@@ -3,13 +3,8 @@ import os
 from collections import defaultdict
 from typing import Any, List, Tuple, Optional
 from mido import Message, MetaMessage, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
-
-try:
-    import tkinter as tk
-    from tkinter import filedialog
-except ImportError:
-    tk = None
-    filedialog = None
+import tkinter as tk
+from tkinter import filedialog
 
 from .track import Track
 from .instruments import (
