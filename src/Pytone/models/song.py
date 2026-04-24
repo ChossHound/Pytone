@@ -110,7 +110,7 @@ class Song:
         """Return True when the song already has the maximum tracks."""
         return len(self.track_list) >= self.get_max_tracks()
 
-    def create_midifile(self, path: Optional[str]) -> str | MidiFile:
+    def create_midifile(self) -> MidiFile:
         """Create a type-1 MIDI file from every track in the song.
 
         Notes are stored as 16th-note steps in the app model, while MIDI
@@ -183,12 +183,7 @@ class Song:
                 previous_tick = absolute_tick
 
             mid.tracks.append(mid_track)
-        if path is None:
-            return mid
-        else:
-            output_path = os.path.abspath(path)
-            mid.save(output_path)
-        return output_path
+        return mid
     
     def create_midifile_from(self, starting_beat: int = 0) -> MidiFile:
         """creates a midifile from the current track list starting
@@ -283,83 +278,71 @@ class Song:
             return path
         return f"{path}.mid"
 
-    def choose_midifile_path(
-        self,
-        initial_filename: str = "song.mid",
-        initial_dir: Optional[str] = None,
-        title: str = "Save MIDI File",
-    ) -> Optional[str]:
-        """Open a native save dialog and return the selected MIDI path.
+    # def choose_midifile_path(
+    #     self,
+    #     initial_filename: str = "song.mid",
+    #     initial_dir: Optional[str] = None,
+    #     title: str = "Save MIDI File",
+    # ) -> Optional[str]:
+    #     """Open a native save dialog and return the selected MIDI path.
 
-        Returns ``None`` when the user cancels the dialog.
-        """
-        if tk is None or filedialog is None:
-            raise RuntimeError("tkinter is not available for MIDI export")
-
-        root = None
-        try:
-            root = tk.Tk()
-            root.withdraw()
-            selected_path = filedialog.asksaveasfilename(
-                title=title,
-                defaultextension=".mid",
-                filetypes=[
-                    ("MIDI files", "*.mid *.midi"),
-                    ("All files", "*.*"),
-                ],
-                initialfile=initial_filename,
-                initialdir=initial_dir or os.getcwd(),
-            )
-        except tk.TclError as exc:
-            raise RuntimeError(
-                "Could not open the MIDI save dialog. "
-                "Check that a desktop display is available."
-            ) from exc
-        finally:
-            if root is not None:
-                root.destroy()
-
-        if not selected_path:
-            return None
-
-        normalized_path = self._normalize_midifile_path(selected_path)
-        return os.path.abspath(normalized_path)
-
-    def export_to_midi(
-        self,
-        path: Optional[str] = None,
-        initial_filename: str = "song.mid",
-        initial_dir: Optional[str] = None,
-    ) -> Optional[str]:
-        """Export the song to a MIDI file.
-
-        When ``path`` is omitted, a native save dialog is shown so the user
-        can choose where to save the file. Returns ``None`` if the dialog is
-        cancelled.
-        """
-        destination = path
-        if destination is None:
-            destination = self.choose_midifile_path(
-                initial_filename=initial_filename,
-                initial_dir=initial_dir,
-            )
-            if destination is None:
-                return None
-
-        destination = self._normalize_midifile_path(destination)
-        return self.create_midifile(destination)
-
-    # def export_to_wav(self, midi_path: str) -> str:
-    #     """exports project to a .wav file
-
-    #     returns path to file
+    #     Returns ``None`` when the user cancels the dialog.
     #     """
-    #     pass
+    #     if tk is None or filedialog is None:
+    #         raise RuntimeError("tkinter is not available for MIDI export")
 
-    # def notes_to_midi(self) -> None:
-    #     """Converts the list of notes into list of midi messages
+    #     root = None
+    #     try:
+    #         root = tk.Tk()
+    #         root.withdraw()
+    #         selected_path = filedialog.asksaveasfilename(
+    #             title=title,
+    #             defaultextension=".mid",
+    #             filetypes=[
+    #                 ("MIDI files", "*.mid *.midi"),
+    #                 ("All files", "*.*"),
+    #             ],
+    #             initialfile=initial_filename,
+    #             initialdir=initial_dir or os.getcwd(),
+    #         )
+    #     except tk.TclError as exc:
+    #         raise RuntimeError(
+    #             "Could not open the MIDI save dialog. "
+    #             "Check that a desktop display is available."
+    #         ) from exc
+    #     finally:
+    #         if root is not None:
+    #             root.destroy()
+
+    #     if not selected_path:
+    #         return None
+
+    #     normalized_path = self._normalize_midifile_path(selected_path)
+    #     return os.path.abspath(normalized_path)
+
+    # def export_to_midi(
+    #     self,
+    #     path: Optional[str] = None,
+    #     initial_filename: str = "song.mid",
+    #     initial_dir: Optional[str] = None,
+    # ) -> Optional[str]:
+    #     """Export the song to a MIDI file.
+
+    #     When ``path`` is omitted, a native save dialog is shown so the user
+    #     can choose where to save the file. Returns ``None`` if the dialog is
+    #     cancelled.
     #     """
-    #     pass
+    #     destination = path
+    #     if destination is None:
+    #         destination = self.choose_midifile_path(
+    #             initial_filename=initial_filename,
+    #             initial_dir=initial_dir,
+    #         )
+    #         if destination is None:
+    #             return None
+
+    #     destination = self._normalize_midifile_path(destination)
+    #     return self.create_midifile(destination)
 
     @classmethod
     def steps_to_ticks(cls, steps: int, ticks_per_beat: int) -> int:
@@ -396,30 +379,6 @@ class Song:
                          note=note.pitch,
                          velocity=0,
                          channel=channel))]
-
-    def message_to_note(self, on_message: Message,
-                        off_message: Message, duration: int) -> Note:
-        """
-
-        Args:
-            on_message (Message): note_on midi message for given pitch of note
-            off_message (Message): note_off midi message for given pitch of 
-                note
-
-        Returns:
-            Note: _description_
-        """
-        # NOTES:
-        # note_off might not be necessary, just need delta time for duration
-
-        # Testing this Function:
-        # - Messages cannot have differing pitches
-        # - Messages cannot be mismatched ( "note_off" in on_message argument)
-        # - velocity comes from note on message
-
-        # Logic:
-        # 
-        pass
 
     def build_tracks_from_midifile(self, midifile: MidiFile) -> None:
         """Builds the track_list from a given Midifile
@@ -526,11 +485,106 @@ class Song:
         if steps_per_bar:
             self.length = max(1, int(max_song_step / steps_per_bar))
 
-    def select_instrument(self, track: int, instrument: int) -> None:
-        """function to be called for selecting an instument for a track
+    def save_song(
+        self,
+        path: Optional[str] = None,
+        initial_filename: str = "song.mid",
+        initial_dir: Optional[str] = None,
+    ) -> Optional[str]:
+        """Save the current song as a MIDI file.
 
-        Args:
-            track (int): _description_
-            instrument (int): _description_
+        When ``path`` is omitted, a native save dialog is shown. Returns the
+        saved absolute path, or ``None`` if the dialog is cancelled.
         """
-        pass
+        destination = path
+        if destination is None:
+            if tk is None or filedialog is None:
+                raise RuntimeError("tkinter is not available for song saving")
+
+            root = None
+            try:
+                root = tk.Tk()
+                root.withdraw()
+                destination = filedialog.asksaveasfilename(
+                    title="Save As",
+                    defaultextension=".mid",
+                    filetypes=[
+                        ("MIDI files", "*.mid *.midi"),
+                        ("All files", "*.*"),
+                    ],
+                    initialfile=initial_filename,
+                    initialdir=initial_dir or os.getcwd(),
+                )
+            except tk.TclError as exc:
+                raise RuntimeError(
+                    "Could not open the save dialog. "
+                    "Check that a desktop display is available."
+                ) from exc
+            finally:
+                if root is not None:
+                    root.destroy()
+
+            if not destination:
+                return None
+
+        destination = os.path.abspath(self._normalize_midifile_path(destination))
+        midifile = self.create_midifile()
+        midifile.save(destination)
+        return destination
+
+    def load_song(
+        self,
+        path: Optional[str] = None,
+        initial_dir: Optional[str] = None,
+    ) -> Optional[str]:
+        """Load a song from a MIDI file.
+
+        When ``path`` is omitted, a native open dialog is shown. Returns the
+        loaded absolute path, or ``None`` if the dialog is cancelled.
+
+        Raises:
+            ValueError: The selected file is not a MIDI file or could not be
+                parsed as one.
+        """
+        destination = path
+        if destination is None:
+            if tk is None or filedialog is None:
+                raise RuntimeError("tkinter is not available for song loading")
+
+            root = None
+            try:
+                root = tk.Tk()
+                root.withdraw()
+                destination = filedialog.askopenfilename(
+                    title="Open Song",
+                    filetypes=[
+                        ("MIDI files", "*.mid *.midi"),
+                        ("All files", "*.*"),
+                    ],
+                    initialdir=initial_dir or os.getcwd(),
+                )
+            except tk.TclError as exc:
+                raise RuntimeError(
+                    "Could not open the load dialog. "
+                    "Check that a desktop display is available."
+                ) from exc
+            finally:
+                if root is not None:
+                    root.destroy()
+
+            if not destination:
+                return None
+
+        destination = os.path.abspath(destination)
+        if not destination.lower().endswith((".mid", ".midi")):
+            raise ValueError("Selected file must be a MIDI file")
+
+        try:
+            midifile = MidiFile(destination)
+        except (OSError, EOFError, ValueError, TypeError) as exc:
+            raise ValueError(
+                f"Selected file is not a valid MIDI file: {destination}"
+            ) from exc
+
+        self.build_tracks_from_midifile(midifile)
+        return destination

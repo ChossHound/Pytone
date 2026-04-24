@@ -12,9 +12,11 @@ from models.song import Song
 from models.audioEngine import Engine
 from mido import bpm2tempo
 
+
 class SongRibbon(Widget):
-    """A class for managing the playback of the song visually and interactively.
-    Allows the user to play, pause, stop, or restart the song.
+    """A class for managing the playback of the song visually 
+    and interactively allows the user to play, pause, stop,
+    or restart the song.
 
     Properties:
      - size: how tall the song ribbon should be
@@ -33,6 +35,8 @@ class SongRibbon(Widget):
         self.size: int = size
         self.play_button: TextButton = TextButton(screen, font, pygame.Rect(32*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), ">", self.toggle_playback)
         self.stop_button: Button = Button(screen, pygame.Rect(42*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), self.stop)
+        self.save_button: TextButton = TextButton(screen, font, pygame.Rect(18*PIXEL_SCALE, 2*PIXEL_SCALE, 16*PIXEL_SCALE, 8*PIXEL_SCALE), 'S', Song().save_song)
+        self.load_button: TextButton = TextButton(screen, font, pygame.Rect(2*PIXEL_SCALE, 2*PIXEL_SCALE, 16*PIXEL_SCALE, 8*PIXEL_SCALE), 'L', Song().load_song)
         self.song_length: int = MAX_SONG_DURATION
         self.progress_bar: Slider = Slider(screen, (32*PIXEL_SCALE, 12*PIXEL_SCALE), 128*PIXEL_SCALE,
                                            lambda: self.current_beat / self.song_length,
@@ -77,6 +81,13 @@ class SongRibbon(Widget):
         spacing: int = 2*PIXEL_SCALE
         pygame.draw.rect(self.screen, TEXT_COLOR, pygame.Rect(self.stop_button.rect.x + spacing, self.stop_button.rect.y + spacing, self.stop_button.rect.width - spacing*2, self.stop_button.rect.height - spacing*2))
 
+        # draw save button
+        self.save_button.draw()
+        
+        # draw load button
+        self.load_button.draw()
+
+        # draw progress bar
         self.progress_bar.draw()
         self.tempo.draw()
         self.instrument.draw()
@@ -148,6 +159,8 @@ class SongRibbon(Widget):
         self.progress_bar.process(event)
         self.instrument.process(event)
         self.track.process(event)
+        self.save_button.process(event)
+        self.load_button.process(event)
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
