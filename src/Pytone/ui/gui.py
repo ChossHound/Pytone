@@ -27,8 +27,8 @@ class GUI:
         self.FONT: pygame.freetype.Font = pygame.freetype.Font("src/Pytone/assets/Tiny5.ttf", 1, resolution=PIXEL_SCALE*5*128)
         Engine().start()
 
-        self.songribbon: SongRibbon = SongRibbon(self.screen, self.FONT, 64)
-        self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 64, 64, lambda: self.songribbon.current_beat, Song(), 0)
+        self.songribbon: SongRibbon = SongRibbon(self.screen, self.FONT, 30*PIXEL_SCALE)
+        self.pianoroll: PianoRoll = PianoRoll(self.screen, self.FONT, 16*PIXEL_SCALE, 30*PIXEL_SCALE, lambda: self.songribbon.current_beat, Song(), 0)
         Cursor().init(self.screen, (255, 255, 255), 8)
 
     def run(self) -> None:

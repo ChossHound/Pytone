@@ -7,6 +7,7 @@ from ui.spin_box import SpinBox
 from ui.button import Button
 from ui.text_button import TextButton
 from ui.slider import Slider
+from ui.dropdown import DropDown
 from models.song import Song
 from models.audioEngine import Engine
 from mido import bpm2tempo
@@ -37,7 +38,29 @@ class SongRibbon(Widget):
                                            lambda: self.current_beat / self.song_length,
                                            self.set_beat_from_percentage)
         self.playing: bool = False
-        self.tempo = SpinBox(screen, font, (552, 8), Song().bpm, 5, 999, on_change=lambda old: self.reset_beat(old))
+        self.tempo: SpinBox = SpinBox(screen, font, (552, 8), Song().bpm, 5, 999, on_change=lambda old: self.reset_beat(old))
+        self.track: DropDown = DropDown(screen, font, (37*PIXEL_SCALE, 16*PIXEL_SCALE), [("1", 1), ("2", 2), ("3", 3), ("4", 4)])
+        self.instrument: DropDown = DropDown(screen, font, (53*PIXEL_SCALE, 16*PIXEL_SCALE), [
+            ("Acoustic Grand Piano", 1),
+            ("Electric Piano", 5),
+            ("Celesta", 9),
+            ("Drawbar Organ", 17),
+            ("Acoustic Guitar (nylon)", 25),
+            ("Acoustic Guitar (steel)", 26),
+            ("Electric Guitar (jazz)", 27),
+            ("Electric Guitar (muted)", 29),
+            ("Distortion Guitar", 31),
+            ("Acoustic Bass", 33),
+            ("Electric Bass", 34),
+            ("Violin", 41),
+            ("Cello", 43),
+            ("String Ensemble", 49),
+            ("Trumpet", 57),
+            ("French Horn", 61),
+            ("Soprano Sax", 65),
+            ("Flute", 73),
+            ("Square Wave", 81),
+            ("Taiko Drum", 117)], on_change=lambda: Song().select_instrument(0, self.instrument.get_value()))
         self.elapsed_time: int = 0
 
     def draw(self, dt: int):
@@ -54,11 +77,10 @@ class SongRibbon(Widget):
         spacing: int = 2*PIXEL_SCALE
         pygame.draw.rect(self.screen, TEXT_COLOR, pygame.Rect(self.stop_button.rect.x + spacing, self.stop_button.rect.y + spacing, self.stop_button.rect.width - spacing*2, self.stop_button.rect.height - spacing*2))
 
-        # draw progress bar
         self.progress_bar.draw()
-
-        # tempo
         self.tempo.draw()
+        self.instrument.draw()
+        self.track.draw()
 
     @staticmethod
     def beat_from_time(time: int, tempo: int) -> int:
@@ -124,6 +146,8 @@ class SongRibbon(Widget):
         self.play_button.process(event)
         self.stop_button.process(event)
         self.progress_bar.process(event)
+        self.instrument.process(event)
+        self.track.process(event)
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
