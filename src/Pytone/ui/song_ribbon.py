@@ -44,6 +44,8 @@ class SongRibbon(Widget):
         self.engine: Engine = Engine() if engine is None else engine
         self.play_button: TextButton = TextButton(screen, font, pygame.Rect(32*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), ">", self.toggle_playback)
         self.stop_button: Button = Button(screen, pygame.Rect(42*PIXEL_SCALE, 2*PIXEL_SCALE, 8*PIXEL_SCALE, 8*PIXEL_SCALE), self.stop)
+        self.save_button: TextButton = TextButton(screen, font, pygame.Rect(18*PIXEL_SCALE, 2*PIXEL_SCALE, 16*PIXEL_SCALE, 8*PIXEL_SCALE), 'S', self.song.save_song)
+        self.load_button: TextButton = TextButton(screen, font, pygame.Rect(2*PIXEL_SCALE, 2*PIXEL_SCALE, 16*PIXEL_SCALE, 8*PIXEL_SCALE), 'L', self.song.load_song)
         self.song_length: int = MAX_SONG_DURATION
         self.progress_bar: Slider = Slider(screen, (32*PIXEL_SCALE, 12*PIXEL_SCALE), 128*PIXEL_SCALE,
                                            lambda: self.current_beat / self.song_length,
@@ -66,6 +68,12 @@ class SongRibbon(Widget):
         self.stop_button.draw()
         spacing: int = 2*PIXEL_SCALE
         pygame.draw.rect(self.screen, TEXT_COLOR, pygame.Rect(self.stop_button.rect.x + spacing, self.stop_button.rect.y + spacing, self.stop_button.rect.width - spacing*2, self.stop_button.rect.height - spacing*2))
+
+        # draw save button
+        self.save_button.draw()
+        
+        # draw load button
+        self.load_button.draw()
 
         # draw progress bar
         self.progress_bar.draw()
@@ -104,6 +112,8 @@ class SongRibbon(Widget):
         self.play_button.process(event)
         self.stop_button.process(event)
         self.progress_bar.process(event)
+        self.save_button.process(event)
+        self.load_button.process(event)
 
         # self.save_button.process(event)
         # self.load_button.process(event)
