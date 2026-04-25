@@ -100,7 +100,7 @@ class SongRibbon(Widget):
 
         # add overflow track to track dropdown if not none
         if Song()._overflow_track is not None:
-            self.track.options.append(("5", 5))
+            self.track.options.append(("5", 4))
     @staticmethod
     def beat_from_time(time: int, tempo: int) -> int:
         """Convert the time elapsesed since start to the number of beats which would have occurred"""
