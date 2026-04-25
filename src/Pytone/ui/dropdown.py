@@ -41,7 +41,7 @@ class DropDown(Widget):
             if new == self.options[i][1]:
                 self.index = i
                 return
-        raise IndexError
+        self.options.append((str(new), new))
 
     def draw(self):
         self.font.origin = True
