@@ -50,6 +50,7 @@ class Song:
         self.length = length
         self.signature = signature
         self.track_list: list[Track] = []
+        self._overflow_track = None
         self.loop = loop
         self._initialized = True
 
@@ -468,13 +469,23 @@ class Song:
 
             if notes or channel is not None or instrument != 0:
                 notes.sort(key=lambda note: (note.start, note.pitch))
-                self.add_track(
-                    Track(
-                        channel=channel or 0,
-                        instrument=instrument,
-                        note_list=notes,
+                if self.track_list <= self.MAX_TRACKS:
+                    self.add_track(
+                        Track(
+                            channel=channel or 0,
+                            instrument=instrument,
+                            note_list=notes,
+                        )
                     )
-                )
+                elif self._overflow_track is None:
+                    # TRACK OVERFLOW CONDITION
+                    self._overflow_track = Track(channel=channel,
+                                                 instrument=instrument,
+                                                 note_list=notes,
+                                                 )
+                else:
+                    self._overflow_track.extend_notes(notes=notes)
+                    self._overflow_track.note_list.sort(key=lambda note: (note.start, note.pitch))
 
         self.bpm = int(round(tempo2bpm(midi_tempo)))
         self.signature = (numerator, denominator)
