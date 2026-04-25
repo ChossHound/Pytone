@@ -53,7 +53,6 @@ class PianoRoll(Widget):
         self.font: pygame.freetype.Font = font
         self.track_index: int = track_index
         self.get_current_beat = get_current_beat
-        self.track: Track = Song().track_list[track_index]
         self.ghost_note: Note | None = None
         self.cropping_note: bool = False
         self.current_pitch: int | None = None
@@ -63,11 +62,10 @@ class PianoRoll(Widget):
 
     def update_track(self, new_track: int):
         self.track_index = new_track
-        self.track = Song().track_list[self.track_index]
 
     def add_note(self, note: Note):
         """Add a note to the current track"""
-        self.track.add_note(note)
+        Song().track_list[self.track_index].add_note(note)
 
     def apply_dimension(self, position: tuple[int, int]) -> tuple[int, int]:
         """Translate a point on the screen to where on the page it would be"""
@@ -103,8 +101,8 @@ class PianoRoll(Widget):
         self.cropping_note = False
         self.ghost_note = Note(y, x, duration=MIN_BEAT_DURATION)
         if self.current_pitch is not None:
-            Engine().send_note_off(self.track.channel, self.current_pitch)
-        Engine().send_note_on(self.track.channel, y, 100)
+            Engine().send_note_off(Song().track_list[self.track_index].channel, self.current_pitch)
+        Engine().send_note_on(Song().track_list[self.track_index].channel, y, 100)
         self.current_pitch = y
 
     def update_ghost_note(self, position: tuple[int, int]):
@@ -123,9 +121,9 @@ class PianoRoll(Widget):
                 n: note = self.get_note_at_position(x, y, self.ghost_note.duration)
                 if n is None:
                     if self.ghost_note.pitch != y:
-                        Engine().send_note_off(self.track.channel, self.ghost_note.pitch)
+                        Engine().send_note_off(Song().track_list[self.track_index].channel, self.ghost_note.pitch)
                         self.current_pitch = y
-                        Engine().send_note_on(self.track.channel, y, 100)
+                        Engine().send_note_on(Song().track_list[self.track_index].channel, y, 100)
                     self.ghost_note.pitch = y
                     self.ghost_note.start = x
 
@@ -138,7 +136,7 @@ class PianoRoll(Widget):
             self.cropping_note = False
 
             if self.current_pitch is not None:
-                Engine().send_note_off(self.track.channel, self.current_pitch)
+                Engine().send_note_off(Song().track_list[self.track_index].channel, self.current_pitch)
                 self.current_pitch = None
 
     def get_rect(self, note: Note) -> pygame.Rect:
@@ -153,7 +151,7 @@ class PianoRoll(Widget):
     def get_note_at_position(self, beat: int, pitch: int, width: int) -> Note | None:
         """Find a note occupies some space on the piano roll"""
         found_notes: List[Note] = []
-        for n in self.track.note_list:
+        for n in Song().track_list[self.track_index].note_list:
             if n.pitch == pitch and n.start < beat + width and n.start + n.duration > beat:
                 found_notes.append(n)
         if len(found_notes) > 0:
@@ -166,7 +164,7 @@ class PianoRoll(Widget):
         # check if over piano or screen
         if Cursor().is_overlapping(((self.piano_size, self.ribbon_size), self.screen.get_size())):
             # check if any notes are hovered
-            for n in self.track.note_list:
+            for n in Song().track_list[self.track_index].note_list:
                 note_rect: pygame.Rect = self.get_rect(n)
                 if Cursor().is_overlapping(note_rect):
                     return n
@@ -181,14 +179,14 @@ class PianoRoll(Widget):
                 pitch: int = self.pitch_from_position(self.apply_dimension(Cursor().get_position())[1])
                 if self.current_pitch != pitch or self.current_pitch is None:
                     if self.current_pitch is not None:
-                        Engine().send_note_off(self.track.channel, self.current_pitch)
+                        Engine().send_note_off(Song().track_list[self.track_index].channel, self.current_pitch)
                     self.current_pitch = pitch
-                    Engine().send_note_on(self.track.channel, pitch, 100)
+                    Engine().send_note_on(Song().track_list[self.track_index].channel, pitch, 100)
             # if we are deleting notes: delete this one too
             if Cursor().is_holding_right():
                 n: Note = self.get_note_at_cursor()
                 if n is not None:
-                    self.track.remove_note(n.pitch, n.start)
+                    Song().track_list[self.track_index].remove_note(n.pitch, n.start)
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
@@ -207,7 +205,7 @@ class PianoRoll(Widget):
                         else:
                             self.cropping_note = True
                         self.ghost_note = n
-                        self.track.remove_note(n.pitch, n.start)
+                        Song().track_list[self.track_index].remove_note(n.pitch, n.start)
 
                     # if no notes are hovered: make a new note
                     elif self.ghost_note is None:
@@ -217,20 +215,20 @@ class PianoRoll(Widget):
                     # play note on piano
                     pitch: int = self.pitch_from_position(self.apply_dimension(Cursor().get_position())[1])
                     if self.current_pitch != pitch and self.current_pitch is not None:
-                        Engine().send_note_off(self.track.channel, self.current_pitch)
+                        Engine().send_note_off(Song().track_list[self.track_index].channel, self.current_pitch)
                     self.current_pitch = pitch
-                    Engine().send_note_on(self.track.channel, pitch, 100)
+                    Engine().send_note_on(Song().track_list[self.track_index].channel, pitch, 100)
 
             if event.button == 3:  # right click
                 n: Note = self.get_note_at_cursor()
                 if n is not None:
-                    self.track.remove_note(n.pitch, n.start)
+                    Song().track_list[self.track_index].remove_note(n.pitch, n.start)
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # Left click
                 self.end_ghost_note()
                 if self.current_pitch is not None:
-                    Engine().send_note_off(self.track.channel, self.current_pitch)
+                    Engine().send_note_off(Song().track_list[self.track_index].channel, self.current_pitch)
                     self.current_pitch = None
 
         elif event.type == pygame.MOUSEWHEEL:
@@ -264,7 +262,7 @@ class PianoRoll(Widget):
             self.font.render_to(self.screen, (self.dimension.x - 5*PIXEL_SCALE, i*STEP_HEIGHT*KEYS_PER_OCTAVE + self.dimension.y - 7*PIXEL_SCALE), str(NUM_OCTAVES + 1 - i), ACCIDENTAL_KEY_COLOR)
 
         # draw notes
-        for note in self.track.note_list:
+        for note in Song().track_list[self.track_index].note_list:
             note_rect: pygame.Rect = self.get_rect(note)
             pygame.draw.rect(self.screen, NOTE_COLOR, note_rect)
             pygame.draw.rect(self.screen, NOTE_BORDER_COLOR, (note_rect[0] + note_rect[2] - PIXEL_SCALE, note_rect[1], PIXEL_SCALE, note_rect[3]))
