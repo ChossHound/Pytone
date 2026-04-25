@@ -15,7 +15,7 @@ class DropDown(Widget):
      - open: whether or not the list is open
      - on_change: a callable that is called everytime a new option is selected
     """
-    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, position: tuple[int, int], options: list[tuple[str, int]], on_change=lambda: None):
+    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, position: tuple[int, int], options: list[tuple[str, int]], on_change=lambda x: None):
         super().__init__(screen)
         self.font: pygame.freetype.Font = font
         self.position: tuple[int, int] = position

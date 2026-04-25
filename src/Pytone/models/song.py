@@ -469,7 +469,7 @@ class Song:
 
             if notes or channel is not None or instrument != 0:
                 notes.sort(key=lambda note: (note.start, note.pitch))
-                if self.track_list <= self.MAX_TRACKS:
+                if len(self.track_list) <= self.MAX_TRACKS:
                     self.add_track(
                         Track(
                             channel=channel or 0,

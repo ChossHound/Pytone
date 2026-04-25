@@ -47,7 +47,7 @@ class SongRibbon(Widget):
                                            self.set_beat_from_percentage)
         self.playing: bool = False
         self.tempo: SpinBox = SpinBox(screen, font, (552, 8), Song().bpm, 5, 999, on_change=lambda old: self.reset_beat(old))
-        self.track: DropDown = DropDown(screen, font, (37*PIXEL_SCALE, 16*PIXEL_SCALE), [("1", 0), ("2", 1), ("3", 2), ("4", 3)])
+        self.track: DropDown = DropDown(screen, font, (37*PIXEL_SCALE, 16*PIXEL_SCALE), [("1", 0), ("2", 1), ("3", 2), ("4", 3)], on_change=self.update_track)
         self.instrument: DropDown = DropDown(screen, font, (53*PIXEL_SCALE, 16*PIXEL_SCALE), [
             ("Acoustic Grand Piano", 1),
             ("Electric Piano", 5),
@@ -123,9 +123,7 @@ class SongRibbon(Widget):
 
     def reset_beat(self, tempo: int):
         """Adjust time_elapsed to keep current_beat consistent when tempo changes"""
-        old_beat: int = SongRibbon.beat_from_time(self.elapsed_time, tempo)
-        while self.current_beat != old_beat:
-            self.current_beat = old_beat
+        self.current_beat = SongRibbon.beat_from_time(self.elapsed_time, tempo)
 
     def update_instrument(self, new_instrument: int):
         Song().track_list[self.track.get_value()].instrument = new_instrument

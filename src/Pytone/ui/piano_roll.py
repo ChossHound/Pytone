@@ -9,7 +9,7 @@ from models.audioEngine import Engine
 from models.track import Track
 from models.song import Song
 
-MAX_SONG_DURATION: int = 16 / (120 / 60) * 60 * 3  # beats = beatspermeasure / beatspersecond * secondsperminute * minutes
+MAX_SONG_DURATION: int = int(16 / (120 // 60) * 60 * 3)  # beats = beatspermeasure / beatspersecond * secondsperminute * minutes
 MIN_BEAT_DURATION: int = 4
 BEAT_WIDTH: int = 4 * PIXEL_SCALE
 STEP_HEIGHT: int = 8 * PIXEL_SCALE
@@ -253,7 +253,7 @@ class PianoRoll(Widget):
             pygame.draw.rect(self.screen, KEY_COLORS[color_index], (0, i*STEP_HEIGHT + self.dimension.y, self.dimension.x, STEP_HEIGHT))
 
         # draw beat markers
-        for i in range(0, 120, 16):
+        for i in range(0, MAX_SONG_DURATION, 16):
             start: int = i*BEAT_WIDTH + self.dimension.x
             pygame.draw.rect(self.screen, MEASURE_COLOR, (start, 0, PIXEL_SCALE, self.screen.get_size()[1]))
 
