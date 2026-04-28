@@ -232,10 +232,14 @@ class PianoRoll(Widget):
                     self.current_pitch = None
 
         elif event.type == pygame.MOUSEWHEEL:
-            self.dimension.y += event.y * PIXEL_SCALE * 4
-            self.dimension.y = min(self.ribbon_size, max(self.dimension.y, self.screen.get_size()[1] - KEYS_PER_OCTAVE*NUM_OCTAVES*STEP_HEIGHT))
+            if pygame.key.get_pressed()[pygame.K_LSHIFT]:
+                self.dimension.x += event.y * PIXEL_SCALE * 4
+            else:
+                self.dimension.y += event.y * PIXEL_SCALE * 4
 
             self.dimension.x -= event.x * PIXEL_SCALE * 4
+
+            self.dimension.y = min(self.ribbon_size, max(self.dimension.y, self.screen.get_size()[1] - KEYS_PER_OCTAVE*NUM_OCTAVES*STEP_HEIGHT))
             self.dimension.x = min(self.piano_size, max(self.dimension.x, self.screen.get_size()[0] - self.dimension.width))
 
     def draw(self):
