@@ -13,7 +13,6 @@ import sys
 import types
 import unittest
 from unittest.mock import Mock, patch
-
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
 
@@ -99,7 +98,8 @@ class TestPianoRoll(unittest.TestCase):
 
     @settings(deadline=None, max_examples=25)
     @given(
-        pitch=st.integers(min_value=45, max_value=67),
+        # Pitches outside this range scroll out of the default viewport.
+        pitch=st.integers(min_value=51, max_value=68),
         start=st.integers(min_value=0, max_value=32),
         duration=st.integers(min_value=1, max_value=8),
         x_offset_steps=st.integers(min_value=0, max_value=6),
@@ -114,7 +114,7 @@ class TestPianoRoll(unittest.TestCase):
         note, note_rect = self._build_visible_note_case(pitch, start, duration)
         self.piano_roll.add_note(note)
 
-        max_x_offset = max(0, note_rect.width - Cursor().size)
+        max_x_offset = max(0, note_rect.width - Cursor().size - 1)
         x_offset = min(x_offset_steps * 4, max_x_offset)
         cursor_position = (note_rect.x + x_offset, note_rect.y)
 
@@ -126,7 +126,7 @@ class TestPianoRoll(unittest.TestCase):
 
     @settings(deadline=None, max_examples=25)
     @given(
-        pitch=st.integers(min_value=45, max_value=67),
+        pitch=st.integers(min_value=51, max_value=68),
         start=st.integers(min_value=0, max_value=32),
         duration=st.integers(min_value=1, max_value=8),
         x_offset_steps=st.integers(min_value=0, max_value=6),
@@ -141,7 +141,7 @@ class TestPianoRoll(unittest.TestCase):
         note, note_rect = self._build_visible_note_case(pitch, start, duration)
         self.piano_roll.add_note(note)
 
-        max_x_offset = max(0, note_rect.width - Cursor().size)
+        max_x_offset = max(0, note_rect.width - Cursor().size - 1)
         x_offset = min(x_offset_steps * 4, max_x_offset)
         cursor_position = (note_rect.x + x_offset, note_rect.y)
 

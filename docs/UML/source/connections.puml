@@ -1,0 +1,37 @@
+@startuml context_view
+title Connection
+
+class AudioEngine <<singleton>> {
+- synthesizer
++ play()
++ pause()
++ send_note_on()
++ send_note_off()
+}
+
+class Song <<singleton>> {
++ track_list
++ overflow_track
++ length
++ bpm
+}
+
+class SongRibbon {
+}
+
+class PianoRoll {
+}
+
+PianoRoll --> Song: Edits notes
+SongRibbon --> Song: Controls 
+
+PianoRoll --> AudioEngine: Uses
+SongRibbon --> AudioEngine: Uses
+
+note left of SongRibbon 
+Manages playback
+Orchestrates midi file handling
+endnote
+
+
+@enduml
