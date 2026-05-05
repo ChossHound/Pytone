@@ -1,0 +1,23 @@
+@startuml context_view
+title Logical View
+
+abstract Widget {
+{abstract} + process(input) -> None
+{abstract} + draw() -> None
+}
+
+Widget <|.. Button
+Widget <|.. Slider
+Widget <|.. SpinBox
+Widget <|.. PianoRoll
+Widget <|.. SongRibbon
+Widget <|.. DropDown
+
+SpinBox --> Button
+DropDown --> Button
+
+SongRibbon --> SpinBox
+SongRibbon --> DropDown
+SongRibbon --> Button
+
+@enduml

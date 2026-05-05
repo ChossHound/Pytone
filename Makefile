@@ -36,7 +36,8 @@ test:
 	pytest -v $(TEST_DIR)
 
 test-coverage:
-	pytest -v --color=yes --cov --cov-report term-missing --cov-report=html:$(DOCS)/htmlcov tests/
+	pytest -color=yes -cov -cov-report -cov-report=html:${DOCS}/htmlcov tests/
+
 clean:
 	find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache -o -name .hypothesis \) -prune -exec rm -rf {} +
 	find . -name ".coverage" -delete
