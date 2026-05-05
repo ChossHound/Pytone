@@ -5,6 +5,7 @@ pygame_gui
 pyfluidsynth
 hypothesis
 pytest
+pytest-cov
 flake8
 autopep8
 mypy

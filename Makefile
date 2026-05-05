@@ -2,6 +2,7 @@ PYTHON ?= python3
 PYTEST ?= $(PYTHON) -m pytest
 FLAKE8 ?= flake8 --max-line-length=100
 MYPY ?= mypy
+DOCS = docs
 
 SRC_DIR := src
 PACKAGE_DIR := $(SRC_DIR)/Pytone

@@ -492,7 +492,7 @@ def test_song_is_a_singleton_and_preserves_initial_configuration():
 
 
 def test_song_reset_instance_creates_a_fresh_singleton():
-    first_song = Song(bpm=120, length=8, signature=(3, 4), loop=False)
+    first_song = Song(bpm=100, length=8, signature=(3, 4), loop=False)
     first_song.add_track(Track(channel=1, instrument=5, note_list=[]))
 
     Song.reset_instance()
@@ -500,7 +500,7 @@ def test_song_reset_instance_creates_a_fresh_singleton():
     replacement_song = Song()
 
     assert replacement_song is not first_song
-    assert replacement_song.bpm == 100
+    assert replacement_song.bpm == 120
     assert replacement_song.length == 16
     assert replacement_song.signature == (4, 4)
     assert replacement_song.loop is True
