@@ -20,8 +20,8 @@ import time
 class Engine:
     """Simple program to pass of midi instructions to sound card to be played.
 
-    Engine is designed to use fluidsynth so if you dont have fluidsynth 
-    playback wont work. Midi editing features should still work regardless. 
+    Engine is designed to use fluidsynth so if you dont have fluidsynth
+    playback wont work. Midi editing features should still work regardless.
 
     Returns:
         _type_: _description_
@@ -46,7 +46,7 @@ class Engine:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
-            
+
     def __init__(self,
                  sound_font: str = None) -> None:
         if getattr(self, "_initialized", False):
@@ -100,7 +100,7 @@ class Engine:
         self.stop()
 
     def play_midi_async(self, song: MidiFile, loop: bool = False) -> None:
-        """Play a MIDI file in a background thread so the UI stays responsive."""
+        """Play a MIDI file in background thread so UI stays responsive"""
         if not isinstance(song, MidiFile):
             raise TypeError("song must be a MidiFile")
 

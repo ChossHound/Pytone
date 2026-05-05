@@ -1,0 +1,123 @@
+@startuml logical_view
+title Pytone Composition View
+
+skinparam classAttributeIconSize 0
+hide empty members
+hide methods
+
+package "Model Layer" {
+  class Note <<dataclass>> {
+    + pitch: int
+    + start: int
+    + duration: int
+    + velocity: int
+  }
+
+  class Track {
+    - _note_list: list[Note]
+    - _channel: int
+    - _instrument: int
+  }
+
+  class Song <<singleton>> {
+    + bpm: int
+    + length: int
+    + signature: tuple[int, int]
+    + track_list: list[Track]
+    - _overflow_track: Track
+  }
+
+  class Engine <<singleton>> {
+    + synth: fluidsynth.Synth
+    + sound_font: str
+    - _playback_thread: threading.Thread
+  }
+}
+
+package "UI Layer" {
+  abstract class Widget {
+    + screen: pygame.Surface
+  }
+
+  class GUI {
+    + screen: pygame.Surface
+    + songribbon: SongRibbon
+    + pianoroll: PianoRoll
+  }
+
+  class PianoRoll {
+    + track_index: int
+    + ghost_note: Note
+    + current_pitch: int
+    + dimension: pygame.Rect
+  }
+
+  class SongRibbon {
+    + play_button: TextButton
+    + stop_button: Button
+    + save_button: TextButton
+    + load_button: TextButton
+    + progress_bar: Slider
+    + tempo: SpinBox
+    + track: DropDown
+    + instrument: DropDown
+  }
+
+  class Cursor <<singleton>> {
+    + screen: pygame.Surface
+    + focus: Widget
+  }
+
+  class Button {
+    + rect: pygame.Rect
+  }
+
+  class TextButton {
+    + text: str
+  }
+
+  class Slider {
+    + position: tuple[int, int]
+    + width: int
+  }
+
+  class SpinBox {
+    + value: int
+    + plus: Button
+    + minus: Button
+  }
+
+  class DropDown {
+    + options: list[tuple[str, int]]
+    + index: int
+  }
+}
+
+Widget <|-- Button
+Button <|-- TextButton
+Widget <|-- Slider
+Widget <|-- SpinBox
+Widget <|-- DropDown
+Widget <|-- PianoRoll
+Widget <|-- SongRibbon
+
+Song *-- "0..4" Track : track_list
+Track *-- "0..*" Note : note_list
+GUI *-- SongRibbon
+GUI *-- PianoRoll
+GUI *-- Cursor
+SongRibbon *-- TextButton : play/save/load
+SongRibbon *-- Button : stop
+SongRibbon *-- Slider : progress
+SongRibbon *-- SpinBox : tempo
+SongRibbon *-- "2" DropDown : track + instrument
+SpinBox *-- "2" Button : plus/minus
+Cursor o-- Widget : focus
+
+PianoRoll ..> Song : edits track notes
+PianoRoll ..> Engine : previews notes
+SongRibbon ..> Song : updates playback state
+SongRibbon ..> Engine : starts / stops playback
+Engine ..> Song : plays generated MIDI
+
+@enduml

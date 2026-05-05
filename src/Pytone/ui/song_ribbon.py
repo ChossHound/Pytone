@@ -75,7 +75,10 @@ class SongRibbon(Widget):
     def draw(self, dt: int):
         if self.playing:
             self.elapsed_time += dt
-        pygame.draw.rect(self.screen, BUMPER_COLOR, (0, 0, self.screen.get_size()[0], self.size))
+        pygame.draw.rect(self.screen, BUMPER_COLOR, (0,
+                                                     0,
+                                                     self.screen.get_size()[0],
+                                                     self.size))
 
         # draw play button
         self.play_button.text = "||" if self.playing else ">"
@@ -84,7 +87,12 @@ class SongRibbon(Widget):
         # draw stop button
         self.stop_button.draw()
         spacing: int = 2*PIXEL_SCALE
-        pygame.draw.rect(self.screen, TEXT_COLOR, pygame.Rect(self.stop_button.rect.x + spacing, self.stop_button.rect.y + spacing, self.stop_button.rect.width - spacing*2, self.stop_button.rect.height - spacing*2))
+        pygame.draw.rect(self.screen,
+                         TEXT_COLOR,
+                         pygame.Rect(self.stop_button.rect.x + spacing,
+                                     self.stop_button.rect.y + spacing,
+                                     self.stop_button.rect.width - spacing*2,
+                                     self.stop_button.rect.height - spacing*2))
 
         # draw save button
         self.save_button.draw()

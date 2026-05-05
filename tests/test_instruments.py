@@ -76,4 +76,3 @@ def test_drum_notes_support_common_aliases_and_normalized_names():
 def test_drum_notes_support_additional_percussion_aliases():
     assert DRUM_NOTES["rimshot"] == 37
     assert DRUM_NOTES["woodblock"] == 76
-

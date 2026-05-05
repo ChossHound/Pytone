@@ -3,8 +3,9 @@ import pygame.freetype
 from ui.widget import Widget
 from typing import Callable
 import math
-from ui.constants import DARK_ACCENT, BUTTON_COLOR, TEXT_COLOR
+from ui.constants import DARK_ACCENT, TEXT_COLOR
 from ui.button import Button
+
 
 class SpinBox(Widget):
     """A UI widget for entering integers.
@@ -15,13 +16,25 @@ class SpinBox(Widget):
      - value: an int representing the current state of the input.
      - min: the minimum (inclusive) int for value
      - max: the maximum (inclusive) int for value
-     - get_next: a callable that takes the current value and returns the next. Initialized to 'next = current + 1'
-     - get_previous: a callable that takes the current value and returns the previous. Initialized to 'previous = current - 1'
-     - width: how large the spin box should be. Determined based on the size of the text times the largest value.
+     - get_next: a callable that takes the current value and returns the next.
+        Initialized to 'next = current + 1'
+     - get_previous: a callable that takes the current value and returns the
+        previous. Initialized to 'previous = current - 1'
+     - width: how large the spin box should be. Determined based on the size
+        of the text times the largest value.
      - plus: a button that calls increment
      - minus: a button that calls decrement
     """
-    def __init__(self, screen: pygame.Surface, font: pygame.freetype.Font, position: tuple[int, int], value, min_value, max_value, get_next: Callable[[int], int] = lambda x: x + 1, get_previous: Callable[[int], int] = lambda x: x - 1, on_change: Callable[[int], None] = lambda x: None):
+    def __init__(self,
+                 screen: pygame.Surface,
+                 font: pygame.freetype.Font,
+                 position: tuple[int, int],
+                 value,
+                 min_value,
+                 max_value,
+                 get_next: Callable[[int], int] = lambda x: x + 1,
+                 get_previous: Callable[[int], int] = lambda x: x - 1,
+                 on_change: Callable[[int], None] = lambda x: None):
         super().__init__(screen)
         self.font: pygame.freetype.Font = font
         self.position: tuple[int, int] = position
@@ -34,8 +47,12 @@ class SpinBox(Widget):
         self.width = 16 * (int(math.log10(max_value)) + 1) + 16
 
         x, y = self.position
-        self.plus: Button = Button(screen, pygame.Rect(x + self.width + 4, y, 20, 16), self.increment)
-        self.minus: Button = Button(screen, pygame.Rect(x + self.width + 4, y + 20, 20, 12), self.decrement)
+        self.plus: Button = Button(screen,
+                                   pygame.Rect(x + self.width + 4, y, 20, 16),
+                                   self.increment)
+        self.minus: Button = Button(screen,
+                                    pygame.Rect(x + self.width + 4, y + 20, 20, 12),
+                                    self.decrement)
 
     def increment(self) -> None:
         """Advace self.value based on self.get_next. Do not exceed self.max"""

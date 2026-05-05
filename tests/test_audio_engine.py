@@ -10,7 +10,9 @@ class _DummySynth:
         pass
 
 
-sys.modules.setdefault("fluidsynth", types.SimpleNamespace(Synth=_DummySynth))
+fake_fluidsynth = types.ModuleType("fluidsynth")
+setattr(fake_fluidsynth, "Synth", _DummySynth)
+sys.modules.setdefault("fluidsynth", fake_fluidsynth)
 
 audio_engine_module = load_model_module("audioEngine")
 Engine = audio_engine_module.Engine

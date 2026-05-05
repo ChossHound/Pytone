@@ -1,6 +1,6 @@
 PYTHON ?= python3
 PYTEST ?= $(PYTHON) -m pytest
-FLAKE8 ?= flake8
+FLAKE8 ?= flake8 --max-line-length=100
 MYPY ?= mypy
 
 SRC_DIR := src

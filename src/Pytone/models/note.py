@@ -59,7 +59,7 @@ class Note:
     def parse_note_to_pitch(input_note: str) -> int:
         """Takes in a note string and converts it to a pitch value
 
-        Example: 
+        Example:
             input: C#2
             output: 25
 
@@ -130,7 +130,7 @@ class Note:
         note_str = ""
         if pitch_value > 127 or pitch_value < 0:
             raise ValueError
-        
+
         note = pitch_value % 12
         octave = pitch_value // 12
 

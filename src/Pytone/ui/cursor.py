@@ -3,6 +3,7 @@ from ui.constants import PIXEL_SCALE
 from ui.widget import Widget
 from typing import Optional
 
+
 class Cursor():
     """ A singleton object for tracking and drawing the cursor to the screen.
 

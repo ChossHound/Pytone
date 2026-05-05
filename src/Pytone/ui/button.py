@@ -9,13 +9,19 @@ class Button(Widget):
     """A widget for calling a method when the user clicks on it.
 
     Properties:
-     - rect: the pygame.Rect that determines where and how large the button should be drawn.
-     - call_back: a callable that returns nothing. Called when the user clicks on the button.
-     - pressed: a bool representing whether or not the button is currently being held
-     - last_called: an int representing the number of milliseconds that have ellapsed between pygame.init and the button being pressed.
+     - rect: the pygame.Rect that determines where and how large the button
+        should be drawn.
+     - call_back: a callable that returns nothing. Called when the user clicks
+        on the button.
+     - pressed: a bool representing whether or not the button is currently
+        being held
+     - last_called: an int representing the number of milliseconds that have
+        ellapsed between pygame.init and the button being pressed.
     """
 
-    def __init__(self, screen: pygame.Surface, rect: pygame.Rect, call_back: Callable[..., None]) -> None:
+    def __init__(self, screen: pygame.Surface,
+                 rect: pygame.Rect,
+                 call_back: Callable[..., None]) -> None:
         super().__init__(screen)
         self.rect: pygame.Rect = rect
         self.call_back: Callable[..., None] = call_back
@@ -41,4 +47,5 @@ class Button(Widget):
         """Return whether or not the button is being held.
            A button is held when it has been 'pressed' for longer than half a second.
         """
-        return self.pressed and pygame.time.get_ticks() - self.last_called > 500 and Cursor().is_overlapping(self.rect)
+        return (self.pressed and pygame.time.get_ticks() -
+                self.last_called > 500 and Cursor().is_overlapping(self.rect))

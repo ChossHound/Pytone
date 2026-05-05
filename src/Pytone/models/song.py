@@ -2,7 +2,12 @@
 import os
 from collections import defaultdict
 from typing import Any, List, Tuple, Optional
-from mido import Message, MetaMessage, MidiTrack, MidiFile, bpm2tempo, tempo2bpm
+from mido import (Message,
+                  MetaMessage,
+                  MidiTrack,
+                  MidiFile,
+                  bpm2tempo,
+                  tempo2bpm)
 import tkinter as tk
 from tkinter import filedialog
 
@@ -180,7 +185,7 @@ class Song:
 
             mid.tracks.append(mid_track)
         return mid
-    
+
     def create_midifile_from(self, starting_beat: int = 0) -> MidiFile:
         """creates a midifile from the current track list starting
             at starting_beat
@@ -250,7 +255,8 @@ class Song:
                     duration=note.duration,
                     velocity=note.velocity,
                 )
-                timed_messages.extend(self.note_to_message(rebased_note, channel))
+                timed_messages.extend(self.note_to_message(rebased_note,
+                                                           channel))
 
             timed_messages.sort(
                 key=lambda item: (
@@ -485,7 +491,9 @@ class Song:
                                                  )
                 else:
                     self._overflow_track.extend_notes(notes=notes)
-                    self._overflow_track.note_list.sort(key=lambda note: (note.start, note.pitch))
+                    self._overflow_track.note_list.sort(key=lambda note:
+                                                        (note.start,
+                                                         note.pitch))
 
         self.bpm = int(round(tempo2bpm(midi_tempo)))
         self.signature = (numerator, denominator)
@@ -539,7 +547,8 @@ class Song:
             if not destination:
                 return None
 
-        destination = os.path.abspath(self._normalize_midifile_path(destination))
+        destination = os.path.abspath(
+            self._normalize_midifile_path(destination))
         midifile = self.create_midifile()
         midifile.save(destination)
         return destination

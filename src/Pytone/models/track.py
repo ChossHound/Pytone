@@ -63,19 +63,19 @@ class Track:
         """
         return self._channel
 
-    @property
-    def channel_was_provided(self) -> bool:
-        """Whether the channel was explicitly set by the caller."""
-        return self._channel_was_provided
-
     @channel.setter
     def channel(self, num: int) -> None:
         self._channel = self._normalize_channel(num)
         self._channel_was_provided = True
 
     @channel.deleter
-    def channel(self):
+    def channel(self) -> None:
         del self._channel
+
+    @property
+    def channel_was_provided(self) -> bool:
+        """Whether the channel was explicitly set by the caller."""
+        return self._channel_was_provided
 
     @property
     def instrument(self) -> int:

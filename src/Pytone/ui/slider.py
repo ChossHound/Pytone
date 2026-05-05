@@ -14,7 +14,12 @@ class Slider(Widget):
      - set_percent: a callable that sets the percentage
      - scrubbing: a bool to track whether the percentage should be set when the mouse moves
     """
-    def __init__(self, screen: pygame.Surface, position: tuple[int, int], width: int, get_percent: Callable[[None], float], set_percent: Callable[[float], None]):
+    def __init__(self,
+                 screen: pygame.Surface,
+                 position: tuple[int, int],
+                 width: int,
+                 get_percent: Callable[[None], float],
+                 set_percent: Callable[[float], None]):
         super().__init__(screen)
         self.position: tuple[int, int] = position
         self.width: int = width
@@ -25,7 +30,12 @@ class Slider(Widget):
     def draw(self):
         x, y = self.position
         pygame.draw.rect(self.screen, DARK_ACCENT, self.get_rect())
-        pygame.draw.rect(self.screen, BUTTON_COLOR, pygame.Rect(x, y, int(self.get_percent() * self.width), 2*PIXEL_SCALE))
+        pygame.draw.rect(self.screen,
+                         BUTTON_COLOR,
+                         pygame.Rect(x,
+                                     y,
+                                     int(self.get_percent() * self.width),
+                                     2*PIXEL_SCALE))
 
     def get_rect(self) -> pygame.Rect:
         """Determine how the rectangle should be drawn"""

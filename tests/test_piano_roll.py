@@ -1,3 +1,14 @@
+import pygame
+from hypothesis import given, settings, strategies as st
+from mido import MidiFile, bpm2tempo
+
+from models.note import Note
+from models.song import Song
+from ui.constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from ui.cursor import Cursor
+from ui.piano_roll import PianoRoll
+from ui.song_ribbon import SongRibbon
+
 import os
 import sys
 import types
@@ -6,28 +17,19 @@ import unittest
 from unittest.mock import patch
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-import pygame
-from hypothesis import given, settings, strategies as st
-from mido import MidiFile, bpm2tempo
-
 
 class _DummySynth:
     def __init__(self, *args, **kwargs):
         pass
 
 
-sys.modules.setdefault("fluidsynth", types.SimpleNamespace(Synth=_DummySynth))
+fake_fluidsynth = types.ModuleType("fluidsynth")
+setattr(fake_fluidsynth, "Synth", _DummySynth)
+sys.modules.setdefault("fluidsynth", fake_fluidsynth)
 
 UI_ROOT = Path(__file__).resolve().parents[1] / "src" / "Pytone"
 if str(UI_ROOT) not in sys.path:
     sys.path.insert(0, str(UI_ROOT))
-
-from models.note import Note
-from models.song import Song
-from ui.constants import SCREEN_HEIGHT, SCREEN_WIDTH
-from ui.cursor import Cursor
-from ui.piano_roll import PianoRoll
-from ui.song_ribbon import SongRibbon
 
 
 pygame.init()

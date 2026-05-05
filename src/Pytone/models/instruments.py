@@ -252,7 +252,7 @@ DRUM_NOTES = MappingProxyType(_DRUM_NOTE_LOOKUP)
 
 
 def resolve_instrument(value: InstrumentInput) -> int:
-    """Resolve an instrument name or integer into a General MIDI program 
+    """Resolve an instrument name or integer into a General MIDI program
         number."""
     if isinstance(value, int):
         return value

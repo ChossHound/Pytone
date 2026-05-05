@@ -1,0 +1,40 @@
+@startuml logical_view
+title Pytone Composition View
+
+skinparam classAttributeIconSize 0
+hide empty members
+hide methods
+
+
+package "Model Layer" {
+  class Note <<dataclass>> {
+    + pitch: int
+    + start: int
+    + duration: int
+    + velocity: int
+  }
+
+  class Track {
+    - _note_list: list[Note]
+    - _channel: int
+    - _instrument: int
+  }
+
+  class Song <<singleton>> {
+    + bpm: int
+    + length: int
+    + signature: tuple[int, int]
+    + track_list: list[Track]
+    - _overflow_track: Track
+  }
+
+  class Engine <<singleton>> {
+    + synth: fluidsynth.Synth
+    + sound_font: str
+    - _playback_thread: threading.Thread
+  }
+}
+
+Engine ..> Song : plays generated MIDI
+Song *-- "0..4" Track : track_list
+Track *-- "0..*" Note : note_list

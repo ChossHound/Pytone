@@ -46,10 +46,3 @@ class Song:
     def save_as_midi(self) -> None:
         # save your song as midi at a selected folder
         pass
-
-    def export_to_wav(self) -> str:
-        """exports project to a .wav file
-
-        returns path to file
-        """
-        pass
