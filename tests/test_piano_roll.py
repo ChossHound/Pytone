@@ -1,3 +1,13 @@
+import pygame
+from hypothesis import assume, given, settings, strategies as st
+
+from models.note import Note
+from models.song import Song
+from models.track import Track
+from ui.constants import PIXEL_SCALE
+from ui.cursor import Cursor
+from ui.piano_roll import BEAT_WIDTH, MIN_BEAT_DURATION, PianoRoll
+
 import os
 import sys
 import types
@@ -15,16 +25,6 @@ class _DummySynth:
 fake_fluidsynth = types.ModuleType("fluidsynth")
 setattr(fake_fluidsynth, "Synth", _DummySynth)
 sys.modules.setdefault("fluidsynth", fake_fluidsynth)
-
-import pygame
-from hypothesis import assume, given, settings, strategies as st
-
-from models.note import Note
-from models.song import Song
-from models.track import Track
-from ui.constants import PIXEL_SCALE
-from ui.cursor import Cursor
-from ui.piano_roll import BEAT_WIDTH, MIN_BEAT_DURATION, PianoRoll
 
 
 class TestPianoRoll(unittest.TestCase):
