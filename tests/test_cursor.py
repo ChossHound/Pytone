@@ -1,4 +1,7 @@
 """Tests for the Cursor singleton."""
+import pygame
+from hypothesis import given, settings, strategies as st
+
 import os
 import sys
 import types
@@ -8,16 +11,15 @@ from unittest.mock import patch
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-import pygame
-from hypothesis import given, settings, strategies as st
-
 
 class _DummySynth:
     def __init__(self, *args, **kwargs):
         pass
 
 
-sys.modules.setdefault("fluidsynth", types.SimpleNamespace(Synth=_DummySynth))
+fake_fluidsynth = types.ModuleType("fluidsynth")
+setattr(fake_fluidsynth, "Synth", _DummySynth)
+sys.modules.setdefault("fluidsynth", fake_fluidsynth)
 
 UI_ROOT = Path(__file__).resolve().parents[1] / "src" / "Pytone"
 if str(UI_ROOT) not in sys.path:

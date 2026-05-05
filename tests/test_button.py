@@ -1,4 +1,8 @@
 """Tests for the Button widget."""
+import pygame
+from ui.button import Button
+from ui.cursor import Cursor
+
 import os
 import sys
 import types
@@ -8,22 +12,19 @@ from unittest.mock import Mock, patch
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-import pygame
-
 
 class _DummySynth:
     def __init__(self, *args, **kwargs):
         pass
 
 
-sys.modules.setdefault("fluidsynth", types.SimpleNamespace(Synth=_DummySynth))
+fake_fluidsynth = types.ModuleType("fluidsynth")
+setattr(fake_fluidsynth, "Synth", _DummySynth)
+sys.modules.setdefault("fluidsynth", fake_fluidsynth)
 
 UI_ROOT = Path(__file__).resolve().parents[1] / "src" / "Pytone"
 if str(UI_ROOT) not in sys.path:
     sys.path.insert(0, str(UI_ROOT))
-
-from ui.button import Button
-from ui.cursor import Cursor
 
 
 pygame.init()

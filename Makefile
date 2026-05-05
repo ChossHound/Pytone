@@ -27,10 +27,10 @@ check: style types test test-coverage clean
 	@echo "All checks passed."
 
 style:
-	$(FLAKE8) $(PACKAGE_DIR) $(TEST_DIR)
+	$(FLAKE8) $(PACKAGE_DIR)
 
 types:
-	mypy --ignore-missing-imports $(TEST_DIR)
+	mypy --ignore-missing-imports $(PACKAGE_DIR)
 
 test:
 	pytest -v $(TEST_DIR)

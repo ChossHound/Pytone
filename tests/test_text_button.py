@@ -16,7 +16,9 @@ class _DummySynth:
         pass
 
 
-sys.modules.setdefault("fluidsynth", types.SimpleNamespace(Synth=_DummySynth))
+fake_fluidsynth = types.ModuleType("fluidsynth")
+setattr(fake_fluidsynth, "Synth", _DummySynth)
+sys.modules.setdefault("fluidsynth", fake_fluidsynth)
 
 UI_ROOT = Path(__file__).resolve().parents[1] / "src" / "Pytone"
 if str(UI_ROOT) not in sys.path:
